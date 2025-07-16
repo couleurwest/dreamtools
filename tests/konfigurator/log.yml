@@ -1,0 +1,80 @@
+version: 1
+formatters:
+  minimal:
+    datefmt: '%Y-%m-%d %H:%M:%S'
+    format: '%(asctime)s.%(msecs)03d #%(levelname)s# | [%(title)s] %(message)s'
+  developer:
+    datefmt: '%Y-%m-%d %H:%M:%S'
+    format: '%(asctime)s.%(msecs)03d #%(levelname)s# %(module)s.%(funcName)s:%(lineno)d | [%(title)s] %(message)s'
+  debug_full:
+    datefmt: '%Y-%m-%d %H:%M:%S'
+    format: '%(asctime)s.%(msecs)03d #%(levelname)s# [%(name)s] %(filename)s.%(funcName)s:%(lineno)d | [%(title)s] %(message)s'
+  code_audit:
+    datefmt: '%Y-%m-%d %H:%M:%S'
+    format: '%(asctime)s.%(msecs)03d #%(levelname)s#  %(levelname)s# %(filename)s.%(funcName)s:%(lineno)d | [%(title)s] %(message)s'
+  sys_admin:
+    datefmt: '%Y-%m-%d %H:%M:%S'
+    format: '%(asctime)s.%(msecs)03d #%(levelname)s#  %(name)s | [%(title)s] %(message)s'
+handlers:
+  console:
+    class: logging.StreamHandler
+    formatter: debug_full
+    level: DEBUG
+    stream: ext://sys.stdout
+  default:
+    class: logging.StreamHandler
+    formatter: developer
+    level: DEBUG
+    stream: ext://sys.stdout
+  file_info:
+    backupCount: 30
+    class: logging.handlers.TimedRotatingFileHandler
+    encoding: utf8
+    filename: logs/info.log
+    formatter: minimal
+    interval: 1
+    level: INFO
+    when: midnight
+  file_system:
+    class: logging.handlers.TimedRotatingFileHandler
+    filename: logs/system.log
+    formatter: sys_admin
+    level: INFO
+    encoding: utf8
+    when: midnight
+    interval: 1
+    backupCount: 30
+  email:
+    class: logging.handlers.SMTPHandler
+    formatter: code_audit
+    mailhost: [ "smtp.example.com", "587" ]
+    fromaddr: "ne-pas-repondre.exemple.com"
+    toaddrs: [ "webmaster@example.com" ]
+    subject: "SUPPORT LOGS"
+    credentials: ["webmaster@example.com", "motdepasse" ]
+    #secure: []  #Liste vide ([]) pour activer STARTTLS, ou null pour le désactiver
+    level: ERROR
+loggers:
+  system:
+    handlers:
+      - file_system
+    level: INFO
+    propagate: false
+  production:
+    handlers:
+      - file_info
+      - email
+    level: INFO
+    propagate: false
+  development:
+    handlers:
+      - console
+      - file_info
+      - email
+    level: DEBUG
+    propagate: false
+  root:
+    handlers:
+      - console
+    level: NOTSET
+    propagate: true

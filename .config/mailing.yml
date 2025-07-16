@@ -1,0 +1,79 @@
+footer:
+  html: >
+    <hr style="margin-top: 20px; margin-bottom: 10px;" />
+    <p style="font-size: 10px; color: #555; line-height: 1.5;">
+      Cet e-mail vous a été envoyé automatiquement. Merci de ne pas y répondre, car votre demande ne pourra pas être traitée via cette adresse.
+    </p>
+    <p style="font-size: 10px; color: #555;">
+      <em>
+        Service propulsé par <a href="mailto:contact@couleurwest-it.com" style="color: #336699;">Couleur West IT</a> — Conception et réalisation d'ambition 3.0.
+      </em>
+    </p>
+    <p style="font-size: 10px; color: #555;">
+      <strong>Sécurité informatique</strong><br />
+      <em>
+        Aucune de vos données personnelles ne fait ou ne fera l'objet d'un traitement sans demande explicite de votre part. Aucune donnée n'est conservée, partagée ni distribuée.
+      </em>
+    </p>
+    <p style="font-size: 10px; color: #555;">
+      <strong>Réduisez votre impact environnemental</strong><br />
+      <em>
+        Selon l’ADEME, l’envoi d’un e-mail de 1 Mo correspond à environ 15 grammes de CO₂. Le stockage prolongé des e-mails et pièces jointes aggrave leur impact environnemental.
+      </em>
+    </p>
+    <p style="font-size: 10px; color: #777; text-align: right; margin-top: 15px;">
+      <cite>« Le monde est vieux, mais l’avenir sort du passé. »<br />
+      — Djibril Tamsir Niane</cite>
+    </p>
+  text: |
+    Cet e-mail vous a été envoyé automatiquement. Merci de ne pas y répondre, car votre demande ne pourra pas être traitée via cette adresse.
+
+    Service propulsé par Couleur West IT (contact@couleurwest-it.com) — Conception et réalisation d'ambition 3.0.
+
+    Sécurité informatique :
+    Aucune de vos données personnelles ne fait ou ne fera l'objet d'un traitement sans demande explicite de votre part. Aucune donnée n'est conservée, partagée ni distribuée.
+
+    Réduisez votre impact environnemental :
+    Selon l’ADEME, l’envoi d’un e-mail de 1 Mo correspond à environ 15 grammes de CO₂. Le stockage prolongé des e-mails et pièces jointes aggrave leur impact environnemental.
+
+    "Le monde est vieux, mais l’avenir sort du passé."
+    — Djibril Tamsir Niane
+mail_test:
+  subject: "[Couleur West IT] Confirmation de réception de votre demande"
+  html: |
+    <p>Bonjour,</p>
+
+    <p>
+      Nous vous confirmons la bonne réception de votre demande transmise via notre formulaire en ligne.
+    </p>
+
+    <p>
+      Un membre de notre équipe l'étudiera dans les meilleurs délais et vous contactera si des précisions sont nécessaires.
+    </p>
+
+    <p style="margin-top: 20px;">
+      <strong>Résumé :</strong><br />
+      - Date de réception : <em>{{ date_test }}</em><br />
+      - Référence : <em>{{ reference }}</em><br />
+      - Statut : <span style="color: green;">En attente de traitement</span>
+    </p>
+
+    <p>
+      Merci de votre confiance,<br />
+      <strong>L'équipe Couleur West IT</strong>
+    </p>
+
+  text: |
+    Bonjour,
+
+    Nous vous confirmons la bonne réception de votre demande transmise via notre formulaire en ligne.
+
+    Un membre de notre équipe l'étudiera dans les meilleurs délais et vous contactera si des précisions sont nécessaires.
+
+    Résumé :
+    - Date de réception : {{ date_test }}
+    - Référence : {{ reference }}
+    - Statut : En attente de traitement
+
+    Merci de votre confiance,
+    L'équipe Couleur West IT
