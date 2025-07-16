@@ -10,7 +10,7 @@ description = "Outils Python pour projets robustes : validation, journalisation,
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.12"
 license = {text = "MIT"}
-dependencies = ["httpx", "pillow", "dnspython", "cerberus"]
+dependencies = ["argon2", "base58", "beautifulsoup4","Cerberus", "cryptography", "dnspython","httpx", "pillow", "pytz", "PyYAML", "tzlocal"]
 dynamic = ["version"]
 
 classifiers = [
