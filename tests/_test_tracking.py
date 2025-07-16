@@ -1,6 +1,6 @@
 from tests import fixation
-from dreamtools.exception_manager import AccountException
-from dreamtools.tracking_manager import TrackingManager
+from dreamtools_dreamgeeker.exception_manager import AccountException
+from dreamtools_dreamgeeker.tracking_manager import TrackingManager
 
 
 def test_tracking_info(fixation):
