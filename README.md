@@ -11,7 +11,7 @@ Ce module propose une collection de fonctions utilitaires conçues pour accélé
 
 ```bash
 pip install .
-dreamtools-init
+dreamtools-dreamgeeker-init
 ```
 
 ⚠️ À l'installation, des fichiers de configuration nécessaires au fonctionnement (log + mailing) seront copiés automatiquement dans le répertoire courant du projet (dans un sous-dossier .config/).
@@ -69,7 +69,7 @@ Les modèles peuvent être dupliqués, personnalisés ou déplacés : il suffira
 ## 📁 Structure
 
 ```bash
-dreamtools/
+dreamtools-dreamgeeker/
 ├── .config/                # Fichiers de configuration par défaut (copiés dans le projet)
 │   ├── mailing.yml         # Templates d'e-mail personnalisables
 │   └── log.yml             # Configuration du logger

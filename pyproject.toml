@@ -3,7 +3,7 @@ requires = ["flit_core >=3.12.0, <4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "dreamtools"
+name = "dreamtools-dreamgeeker"
 authors = [{name = "Ketsia LENTIN", email = "saraswati@3p0.net"}]
 maintainers = [{name = "Couleur West IT", email = "contact@couleurwest-it.com"}]
 description = "Outils Python pour projets robustes : validation, journalisation, mailing, image, etc."
@@ -24,3 +24,7 @@ dreamtools-init = "dreamtools.cli:main"
 [project.urls]
 Homepage = "https://couleurwest-it.com"
 Repository = "https://github.com/couleurwest/dreamtools"
+
+
+[tool.setuptools]
+packages = ["mon_projet"]
