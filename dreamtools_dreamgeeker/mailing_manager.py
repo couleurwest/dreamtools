@@ -6,7 +6,7 @@ __all__ = ['MailController']
 """
 Module de Gestion de mail_object préparés
 
-pathfile : dreamtools-dreamgeeker/mail_objecting_manager.py
+pathfile : dreamtools_dreamgeeker/mail_objecting_manager.py
 
 Pré-Requis
 -------------
