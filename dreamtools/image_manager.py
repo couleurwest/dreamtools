@@ -44,10 +44,9 @@ class ImageManager(object):
         ==================================
         Les images sont convertit au format JPEG
 
-        :parametres:
-        :param str src: pathfile image d'origine
-        :param src dest: path destionantion image
-        :param bool with_ext: Avec ou sans extension, False par défaut
+        :param int size_max: taille maximum d'une image
+        :param int size_thumb_max: taille miniature et minimum
+
         """
         self.extension = file_manager.file_extension(src).upper()
 
@@ -180,24 +179,17 @@ class ImageManager(object):
         img.thumbnail(s)
         return img
 
-    def save(self, format):
+    def save(self, frm:str|None= None):
         """ Thumb Image
-
-        :param tuple[int, int] s: taille image, defaul (200, 200à
-
+        :param frm:
         """
-        if not format:
-            format = self.extension
-
-        file_name = self.file + '.' + format.lower()
-        self.img.save(file_name, format.upper())
+        frm = frm.lower() if frm else self.extension.lower()
+        file_name = self.file + '.' + frm
+        self.img.save(file_name, frm.upper())
 
 
-    def save_thumb_image(self, s=None):
+    def save_thumb_image(self):
         """ Thumb Image
-
-        :param tuple[int, int] s: taille image, defaul (200, 200à
-
         """
         thumb = self.generate_thumb()
         self.save_image_jpeg(self.file + "_thumb", thumb)

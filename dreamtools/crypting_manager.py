@@ -1,3 +1,5 @@
+from argon2.exceptions import VerifyMismatchError
+
 _all_ = ['CryptoManager']
 import base64
 import json
@@ -61,7 +63,7 @@ class CryptoManager:
         return fp1 == stored_fingerprint
 
     @staticmethod
-    async def generate_keys(client_id):
+    async def generate_keys():
         """Génère une paire de clés X448, stocke en DB et retourne les éléments."""
         private_key = x448.X448PrivateKey.generate()
         private_bytes = private_key.private_bytes(
@@ -74,7 +76,6 @@ class CryptoManager:
             encoding=serialization.Encoding.Raw,
             format=serialization.PublicFormat.Raw
         )
-        print('Generation fingerprint')
         finger_print = CryptoManager.generate_fingerprint(public_bytes)
 
         return public_bytes, private_bytes, finger_print
@@ -204,7 +205,7 @@ class CryptoManager:
         try:
             CryptoManager.ph.verify(hasher, password)
             return True
-        except Exception:
+        except VerifyMismatchError:
             return False
 
     @staticmethod

@@ -8,7 +8,7 @@ class Reponce:
 
     def __init__(self, message:str='Opération réussie', title:str='', status:int=200, *args, **kwargs):
         self.status = status
-        self.detail = kwargs
+        self.detail = args or kwargs
         self.message = message
         self.title = title
 

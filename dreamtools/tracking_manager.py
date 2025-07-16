@@ -5,16 +5,16 @@ import inspect
 import logging
 import logging.config as log_config
 
+from . import file_manager
+from . import toolbox
 from .config_manager import ConfigController
 from .controller_manager import ControllerEngine
 from .exception_manager import ExceptionManager, Reponce
-from . import file_manager
-from . import toolbox
 
 
 class TrackingManager:
-    tracker:logging.Logger
-    system_tracker:logging.Logger = None
+    tracker: logging.Logger
+    system_tracker: logging.Logger = None
     LOG_TRACKED = ''
 
     @staticmethod
@@ -53,58 +53,52 @@ class TrackingManager:
             logging.basicConfig(level=logging.NOTSET)
 
     @staticmethod
-    def msg_tracking(msg, title, log_level=logging.INFO, status=0):
+    def msg_tracking(msg, title, log_level=logging.INFO):
         """ Tracking message
 
         :param str msg: message à ecrire dans logs
         :param str title: Titre ou référence associé au message
         :param int log_level: LOG LEVEL Niveau de l'alert (DEBUG | INFO | WARN | )
-        :param int status: Code numérique
 
         """
 
-        TrackingManager.tracker.log(log_level, msg, exc_info=True, stack_info=False, stacklevel=2, extra={'title': title, 'stacklevel':2})
+        TrackingManager.tracker.log(log_level, msg, exc_info=True, stack_info=False, stacklevel=2,
+                                    extra={'title': title, 'stacklevel': 2})
 
     @staticmethod
-    def alert_tracking(msg, title, status=0):
+    def alert_tracking(msg, title):
         """ Message d'alerte (WARNING)
 
         :param str msg: message à ecrire dans logs
         :param str title: Titre ou référence associé au message
-        :param int status: Code numérique
         """
-        TrackingManager.msg_tracking(msg, title, logging.WARNING, status)
+        TrackingManager.msg_tracking(msg, title, logging.WARNING)
 
     @staticmethod
-    def info_tracking(msg, title, status=0):
+    def info_tracking(msg, title):
         """ Message d'info (INFO)
 
         :param str msg: message à ecrire dans logs
         :param str title: Titre ou référence associé au message
-        :param int status: Code numérique
         """
 
-        TrackingManager.msg_tracking(msg, title, logging.INFO, status)
+        TrackingManager.msg_tracking(msg, title, logging.INFO)
 
     @staticmethod
-    def error_tracking(msg, title, status=500):
+    def error_tracking(msg, title):
         """ Message d'error (ERROR)
-
         :param str msg: message à ecrire dans logs
         :param str title: Titre ou référence associé au message
-        :param int status: Code numérique
         """
-        TrackingManager.msg_tracking(msg, title, logging.ERROR, status)
+        TrackingManager.msg_tracking(msg, title, logging.ERROR)
 
     @staticmethod
-    def critical_tracking(msg, title, status=0):
+    def critical_tracking(msg, title):
         """ Message dcritique (CRITIQUE)
-
         :param str msg: message à ecrire dans logs
         :param str title: Titre ou référence associé au message
-        :param int status: Code numérique
         """
-        TrackingManager.msg_tracking(msg, title, logging.CRITICAL, status)
+        TrackingManager.msg_tracking(msg, title, logging.CRITICAL)
 
     @staticmethod
     def flag(trace):
@@ -115,7 +109,7 @@ class TrackingManager:
         TrackingManager.LOG_TRACKED = trace
 
     @staticmethod
-    def exception_tracking(ex, title:str, status=500)->ExceptionManager:
+    def exception_tracking(ex, title: str, status=500) -> ExceptionManager:
         """
         Récupération et traitement des exceptions
 
@@ -124,22 +118,20 @@ class TrackingManager:
         :param str title: Information
         """
 
-
         try:
             status = getattr(ex, 'status', status) or status
-            if TrackingManager.LOG_TRACKED != '' :
+            if TrackingManager.LOG_TRACKED != '':
                 if TrackingManager.system_tracker:
-                    TrackingManager.system_tracking('## ' + TrackingManager.LOG_TRACKED + ' ##', title, logging.INFO, status)
-                else:
-                    TrackingManager.msg_tracking('## ' + TrackingManager.LOG_TRACKED + ' ##', title, logging.INFO, status)
+                    TrackingManager.system_tracking('## ' + TrackingManager.LOG_TRACKED + ' ##', title, logging.INFO)
+                    TrackingManager.msg_tracking('## ' + TrackingManager.LOG_TRACKED + ' ##', title, logging.INFO)
                 TrackingManager.LOG_TRACKED = ''
-                
+
             if isinstance(ex, ExceptionManager):
-                TrackingManager.error_tracking(ex.message, ex.title, status)
+                TrackingManager.error_tracking(ex.message, ex.title)
                 return ex
             else:
-                TrackingManager.error_tracking(str(ex), title, status)
-                return ExceptionManager(str(ex), title, status)
+                TrackingManager.error_tracking(str(ex), title)
+                return ExceptionManager(str(ex), title)
 
         except Exception as sex:
             toolbox.print_err('*****************  Erreur système *****************: \n', str(sex))
@@ -167,28 +159,21 @@ class TrackingManager:
 
         try:
             TrackingManager.flag('{}'.format(action))
-            status = kwargs.get('status', 200)
-
-            if kwargs.get('status'): del kwargs['status']
-
             if inspect.iscoroutinefunction(fn):
                 r = asyncio.run(fn(*args, **kwargs))
             else:
                 r = fn(*args, **kwargs)
 
-            return r if isinstance(r, Reponce) else Reponce( "Action réussi", action, 200, r)
+            return r if isinstance(r, Reponce) else Reponce("Action réussi", action, 200, r)
 
         except Exception as ex:
             return TrackingManager.exception_tracking(ex, action)
 
     @staticmethod
-    def system_tracking(msg, title, log_level=logging.WARNING, status=500):
+    def system_tracking(msg, title, log_level=logging.WARNING):
         """ Tracking message
-
         :param str msg: message à ecrire dans logs
         :param str title: Titre ou référence associé au message
         :param int log_level: LOG LEVEL Niveau de l'alert (DEBUG | INFO | WARN | )
-        :param int status: Code numérique
-
         """
         TrackingManager.system_tracker.log(log_level, msg, extra={'title': title})

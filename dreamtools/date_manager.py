@@ -32,7 +32,7 @@ import locale
 from datetime import datetime, timedelta, date
 
 import pytz
-from tzlocal import get_localzone
+from tzlocal import get_localzone_name
 
 I_MON, I_TUES, I_WED, I_THU, I_FRI, I_SAT, I_SUN = 1, 2, 3, 4, 5, 6, 0
 
@@ -49,22 +49,27 @@ FR_FORMAT_RSS_ATOM = '%Y-%m-%dT%H:%M:%SZ'  # correction ici
 FRM_ISO = 'iso'
 FRM_TIMESTAMP = 'ts'
 
-tz_cay = pytz.timezone('America/Cayenne')
-tz_fr = pytz.timezone('Europe/Paris')
+
+def get_timezone(name=None):
+    if name:
+        return pytz.timezone(name)
+    return pytz.timezone(get_localzone_name())
+
+
+tz_cay = get_timezone('America/Cayenne')
+tz_fr = get_timezone('Europe/Paris')
 tz_utc = pytz.UTC
-tz_local = get_localzone()
+tz_local = get_timezone()
 
-# Compatible avec pytz
-tz = pytz.timezone(str(tz_local))
 
-def dte_to_dtime(dtime: date, tz: pytz.timezone = tz_utc, force_midnight=False) -> datetime:
+def dte_to_dtime(dtime: date, ptz: pytz.timezone = tz_utc, force_midnight=False) -> datetime:
     """
     Convertit un objet `date` en `datetime` à minuit (00:00:00).
 
     Si l'objet est déjà un `datetime`, il est renvoyé tel quel.
 
     :param dtime: Date ou datetime à convertir
-    :param tz: Fuseau horaire à appliquer si conversion nécessaire (défaut : UTC)
+    :param ptz: Fuseau horaire à appliquer si conversion nécessaire (défaut : UTC)
     :param force_midnight: Si True, positionne systématiquement à minuit
     :return: Objet datetime timezone-aware
 
@@ -75,39 +80,39 @@ def dte_to_dtime(dtime: date, tz: pytz.timezone = tz_utc, force_midnight=False) 
 
     if isinstance(dtime, date) and not isinstance(dtime, datetime):
         dtime = datetime.combine(dtime, datetime.min.time())
-        dtime = set_timezone(dtime, tz=tz)
+        dtime = set_timezone(dtime, ptz=ptz)
     elif force_midnight:
         dtime = datetime.combine(dtime, datetime.min.time())
 
     return dtime
 
 
-def get_midnight_dtime(dtime: date | None = None, tz=tz_utc) -> datetime:
+def get_midnight_dtime(dtime: date | None = None, ptz=tz_utc) -> datetime:
     """
     Renvoie un datetime positionné à minuit du jour indiqué (ou aujourd'hui).
 
     :param dtime: Date ou None (utilise aujourd'hui si None)
-    :param tz: Fuseau horaire à appliquer (défaut : UTC)
+    :param ptz: Fuseau horaire à appliquer (défaut : UTC)
     :return: Datetime à 00:00:00
     """
-    return dte_to_dtime(dtime or get_now_dtime(tz), tz, force_midnight=True)
+    return dte_to_dtime(dtime or get_now_dtime(ptz), ptz, force_midnight=True)
 
 
-def get_now_dtime(tz=tz_utc) -> datetime:
+def get_now_dtime(ptz=tz_utc) -> datetime:
     """
     Renvoie la date et l'heure actuelle avec timezone.
 
-    :param tz: Fuseau horaire à utiliser (défaut : UTC)
+    :param ptz: Fuseau horaire à utiliser (défaut : UTC)
     :return: Datetime actuel timezone-aware
     """
-    return datetime.now(tz)
+    return datetime.now(ptz)
 
 
-def get_now_str(tz=tz_utc, fm=FR_FORMAT_DTIME) -> str:
+def get_now_str(ptz=tz_utc, fm=FR_FORMAT_DTIME) -> str:
     """
     Renvoie la date et l'heure actuelle formatée.
 
-    :param tz: Fuseau horaire à utiliser (défaut : UTC)
+    :param ptz: Fuseau horaire à utiliser (défaut : UTC)
     :param fm: Format de la date (strptime)
     :return: Chaîne formatée
 
@@ -116,31 +121,31 @@ def get_now_str(tz=tz_utc, fm=FR_FORMAT_DTIME) -> str:
         '12-07-2025 10:34:00'
     """
 
-    return get_dtime_str(get_now_dtime(tz), fm=fm)
+    return get_dtime_str(get_now_dtime(ptz), fm=fm)
 
 
-def get_today_str(tz=tz_utc, fm=FR_FORMAT_DATE) -> str:
+def get_today_str(ptz=tz_utc, fm=FR_FORMAT_DATE) -> str:
     """
     Renvoie la date actuelle formatée sans heure.
 
-    :param tz: Fuseau horaire à utiliser (défaut : UTC)
+    :param ptz: Fuseau horaire à utiliser (défaut : UTC)
     :param fm: Format de date (ex : '%d/%m/%Y')
     :return: Chaîne de date
     """
-    return get_now_str(tz, fm=fm)
+    return get_now_str(ptz, fm=fm)
 
 
-def get_dtime_str(dtime: datetime | date | None = None, tz: pytz.timezone = tz_utc,
+def get_dtime_str(dtime: datetime | date | None = None, ptz: pytz.timezone = tz_utc,
                   fm: str = FRM_ISO) -> str | datetime:
     """
     Formate un datetime ou une date selon le format demandé.
 
     :param dtime: Date ou datetime à formater (None = maintenant)
-    :param tz: Fuseau horaire à appliquer (défaut : UTC)
+    :param ptz: Fuseau horaire à appliquer (défaut : UTC)
     :param fm: Format de sortie ('iso' pour isoformat ou format strptime)
     :return: Chaîne formatée ou datetime
     """
-    dtime = get_now_dtime(tz) if dtime is None else dte_to_dtime(dtime, tz)
+    dtime = get_now_dtime(ptz) if dtime is None else dte_to_dtime(dtime, ptz)
 
     if fm == FRM_ISO:
         return dtime.isoformat()
@@ -148,18 +153,18 @@ def get_dtime_str(dtime: datetime | date | None = None, tz: pytz.timezone = tz_u
     return dtime.strftime(fm)
 
 
-def set_timezone(dtime: datetime, tz=tz_utc) -> datetime:
+def set_timezone(dtime: datetime, ptz=tz_utc) -> datetime:
     """
     Applique une timezone à un datetime naïf ou convertit entre timezones.
 
     :param dtime: Datetime à traiter
-    :param tz: Timezone cible (défaut : UTC)
+    :param ptz: Timezone cible (défaut : UTC)
     :return: Datetime
     """
     if dtime.tzinfo is None:
-        return tz.localize(dtime)
-    elif dtime.tzinfo != tz:
-        return dtime.astimezone(tz)
+        return ptz.localize(dtime)
+    elif dtime.tzinfo != ptz:
+        return dtime.astimezone(ptz)
     else:
         return dtime
 
@@ -194,54 +199,54 @@ def dtime_to_fr(dtime: datetime) -> datetime:
     return set_timezone(dtime, tz_local)
 
 
-def get_dtime_ts(dtime: datetime | date | None = None, tz: pytz.timezone = tz_utc) -> int:
+def get_dtime_ts(dtime: datetime | date | None = None, ptz: pytz.timezone = tz_utc) -> int:
     """
     Retourne le timestamp (secondes depuis Epoch) d'une date donnée.
 
     :param dtime: objet date, datetime ou None
-    :param tz: timezone de référence (défaut : UTC)
+    :param ptz: timezone de référence (défaut : UTC)
     :return: timestamp (int)
     """
-    dtime = get_now_dtime(tz) if dtime is None else dte_to_dtime(dtime, tz)
+    dtime = get_now_dtime(ptz) if dtime is None else dte_to_dtime(dtime, ptz)
     return int(dtime.timestamp())
 
 
-def get_midnight_ts(dtime: datetime | date | None = None, tz: pytz.timezone = tz_utc) -> int:
+def get_midnight_ts(dtime: datetime | date | None = None, ptz: pytz.timezone = tz_utc) -> int:
     """
     Retourne le timestamp correspondant à minuit du jour spécifié.
 
     :param dtime: Objet date ou datetime ou None
-    :param tz: timezone de référence
+    :param ptz: timezone de référence
     :return: timestamp à 00:00 du jour
     """
-    dtime = get_midnight_dtime(dtime, tz)
+    dtime = get_midnight_dtime(dtime, ptz)
     return int(dtime.timestamp())
 
 
-def get_yesterday_ts(dtime: datetime | date | None = None, tz: pytz.timezone = tz_utc) -> int:
+def get_yesterday_ts(dtime: datetime | date | None = None, ptz: pytz.timezone = tz_utc) -> int:
     """
     Retourne le timestamp à minuit du jour précédent la date spécifiée.
 
     :param dtime: Date de référence ou None (par défaut : aujourd'hui)
-    :param tz: timezone de référence
+    :param ptz: timezone de référence
     :return: timestamp à minuit du jour précédent
     """
-    dtime = get_midnight_dtime(dtime, tz)
+    dtime = get_midnight_dtime(dtime, ptz)
     dtime = dtime_add_days(dtime, -1)
 
     return int(dtime.timestamp())
 
 
-def ts_until_midnight(dtime: datetime | date | None = None, tz: pytz.timezone = tz_utc) -> int:
+def ts_until_midnight(dtime: datetime | date | None = None, ptz: pytz.timezone = tz_utc) -> int:
     """
     Retourne le nombre de secondes jusqu'à minuit suivant la date donnée.
 
     :param dtime: date ou datetime (None = maintenant)
-    :param tz: timezone cible
+    :param ptz: timezone cible
     :return: nombre de secondes jusqu'à la prochaine minuit
     """
-    dtime = get_midnight_dtime(dtime, tz)
-    today = get_midnight_ts(dtime, tz)
+    dtime = get_midnight_dtime(dtime, ptz)
+    today = get_midnight_ts(dtime, ptz)
     tonight = dtime_add_days(dtime)
 
     return int(tonight.timestamp() - today)
@@ -253,7 +258,7 @@ def utcnow_iso() -> str:
 
     :return str: date au format ISO
     """
-    return get_dtime_str(tz=tz_utc)
+    return get_dtime_str(ptz=tz_utc)
 
 
 def utcnow_ts() -> int:
@@ -262,7 +267,7 @@ def utcnow_ts() -> int:
 
     :return: timestamp UTC (int)
     """
-    return get_dtime_ts(tz=tz_utc)
+    return get_dtime_ts(ptz=tz_utc)
 
 
 def utcnow_str() -> str:
@@ -271,7 +276,7 @@ def utcnow_str() -> str:
 
     :return: chaîne de date ISO UTC (str)
     """
-    return get_now_str(tz=tz_utc, fm=FRM_ISO)
+    return get_now_str(ptz=tz_utc, fm=FRM_ISO)
 
 
 def set_dte(p_year, p_month, p_day) -> date:
@@ -286,18 +291,18 @@ def set_dte(p_year, p_month, p_day) -> date:
     return date(p_year, p_month, p_day)
 
 
-def set_dtime(p_year, p_month, p_day, tz: pytz.timezone = tz_utc) -> datetime:
+def set_dtime(p_year, p_month, p_day, ptz: pytz.timezone = tz_utc) -> datetime:
     """
     Crée un objet `datetime` à partir d'une date numérique, positionnée à minuit.
 
     :param p_year: année (int)
     :param p_month: mois (int)
     :param p_day: jour (int)
-    :param tz: timezone (défaut UTC)
+    :param ptz: timezone (défaut UTC)
     :return: objet datetime timezone-aware à 00:00
     """
     dte = set_dte(p_year, p_month, p_day)
-    return dte_to_dtime(dte, tz)
+    return dte_to_dtime(dte, ptz)
 
 
 def ts_to_dtime(ts) -> datetime:
@@ -310,25 +315,25 @@ def ts_to_dtime(ts) -> datetime:
     return datetime.fromtimestamp(int(ts))  # => renvoie datetime
 
 
-def ts_to_str(ts, tz: pytz.timezone = tz_utc, fm=FR_FORMAT_DTIME):
+def ts_to_str(ts, ptz: pytz.timezone = tz_utc, fm=FR_FORMAT_DTIME):
     """
     Convertit un timestamp en chaîne formatée.
 
     :param ts: timestamp à convertir
-    :param tz: timezone pour conversion
+    :param ptz: timezone pour conversion
     :param fm: format d'affichage (strftime)
     :return: chaîne de caractères représentant la date
     """
     dtime = ts_to_dtime(ts)
-    return get_dtime_str(dtime, tz, fm)
+    return get_dtime_str(dtime, ptz, fm)
 
 
-def str_to_dtime(s_dte: str, tz=tz_utc, fm=FR_FORMAT_DTIME):
+def str_to_dtime(s_dte: str, ptz=tz_utc, fm=FR_FORMAT_DTIME):
     """
     Convertit une chaîne formatée en objet `datetime` timezone-aware.
 
     :param s_dte: chaîne de date à convertir
-    :param tz: timezone cible
+    :param ptz: timezone cible
     :param fm: format de la chaîne (par défaut : '%d-%m-%Y %H:%M:%S')
     :return: objet datetime ou None si invalide
 
@@ -337,7 +342,7 @@ def str_to_dtime(s_dte: str, tz=tz_utc, fm=FR_FORMAT_DTIME):
         datetime.datetime(1976, 2, 24, 16, 45, tzinfo=...)
     """
     dtime = datetime.strptime(s_dte, fm)
-    return set_timezone(dtime, tz)
+    return set_timezone(dtime, ptz)
 
 
 def paques(y):

@@ -506,10 +506,9 @@ def dictionary(dictionnaire):
     elif type(dictionnaire) is list:
         document = [dictionary(v) for v in dictionnaire]
     elif dictionnaire is not None:
-
         try:
             document = dict(dictionnaire)
-        except:
+        except TypeError:
             document = dictionnaire
 
     return document
