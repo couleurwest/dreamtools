@@ -13,7 +13,7 @@ from PIL.TiffImagePlugin import ImageFileDirectory_v2
 
 from . import file_manager
 from .controller_manager import ControllerEngine
-from tracking_manager import TrackingManager
+from .tracking_manager import TrackingManager
 
 TYPE_IMG_JPEG = 'JPEG'
 TYPE_IMG_PNG = 'PNG'

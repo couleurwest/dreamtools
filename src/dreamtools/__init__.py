@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+__all__ = ['config_manager', 'controller_manager', 'crypting_manager', 'date_manager', 'exception_manager',
+           'file_manager', 'image_manager', 'mailing_manager', 'toolbox', 'tracking_manager',
+           'validators_manager']
 """
 Liste de fonction standard reutilisable
 

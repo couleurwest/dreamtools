@@ -1,6 +1,6 @@
 from cerberus.validator import Validator, schema_registry
 
-import toolbox
+from . import toolbox
 
 schema_registry.add('email scheme', {'email': {'type': 'string', 'regex': toolbox.RGX_EMAIL}})
 schema_registry.add('password scheme', {'password': {'type': 'string', 'regex': toolbox.RGX_PWD}})

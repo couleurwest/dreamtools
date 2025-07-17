@@ -13,8 +13,6 @@ Repertoires par défaut
 Class CFBases
 -------------
 """
-
-
 import yaml
 from yaml import SafeLoader
 

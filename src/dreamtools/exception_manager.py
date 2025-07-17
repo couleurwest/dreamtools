@@ -1,5 +1,3 @@
-
-
 class Reponce:
     status:int
     detail = None

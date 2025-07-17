@@ -1,8 +1,10 @@
 import pytest
 
-from . import file_manager
-from . import date_manager
-from . import Constantine, MailController, fixation
+from src.dreamtools import file_manager
+from src.dreamtools import date_manager
+from src.dreamtools.mailing_manager import MailController
+
+from tests import Constantine
 
 reference = 'CWI-REQ-20250716-001'
 date_test = date_manager.get_today_str(fm='%d-%m-%Y')
