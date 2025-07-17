@@ -6,7 +6,7 @@ Module de fonctions basiques
 
 Liste de fonctions utiles
 
-pathfile : dreamtools_dreamgeeker/tools
+pathfile : dreamtools/tools
 
 Constantes globales
 --------------------

@@ -1,6 +1,7 @@
 import pytest
 
-from dreamtools_dreamgeeker import file_manager, date_manager
+from src.dreamtools import file_manager
+from src.dreamtools import date_manager
 from . import Constantine, MailController, fixation
 
 reference = 'CWI-REQ-20250716-001'

@@ -2,7 +2,7 @@ import copy
 
 _all_ = ['ImageManager']
 # -*- coding: utf-8 -*-
-# project/dreamtools_dreamgeeker/image_manager.py
+# project/dreamtools/image_manager.py
 
 import os
 from io import BytesIO
@@ -27,7 +27,7 @@ Class CImagine
 Class permettant le traitement d'une image png convertit en jpg avec prise en charge de la transparence (fond blanc)
 
 
-pathfile : dreamtools_dreamgeeker/pyimaging
+pathfile : dreamtools/pyimaging
 
 """
 

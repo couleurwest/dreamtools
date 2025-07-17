@@ -18,11 +18,14 @@ classifiers = [
   "Programming Language :: Python :: 3.12"
 ]
 
-[tool.flit.module]
-name = "dreamgeeker"
-
 [project.scripts]
-dreamtools-init = "dreamtools_dreamgeeker.cli:main"
+dreamtools-init = "dreamtools.cli:main"
+
+[tool.flit.module]
+name = "dreamtools"
+
+[tool.flit.sdist]
+include = ["src"]
 
 [project.urls]
 Homepage = "https://couleurwest-it.com"

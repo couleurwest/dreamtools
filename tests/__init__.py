@@ -1,9 +1,9 @@
 import pytest
 
-from dreamtools_dreamgeeker import file_manager
-from dreamtools_dreamgeeker.controller_manager import ControllerEngine
-from dreamtools_dreamgeeker.mailing_manager import MailController
-from dreamtools_dreamgeeker.tracking_manager import TrackingManager
+from src.dreamtools import file_manager
+from src.dreamtools import ControllerEngine
+from src.dreamtools.mailing_manager import MailController
+from src.dreamtools import TrackingManager
 
 
 class Constantine(ControllerEngine):
@@ -18,7 +18,7 @@ def fixation():
 
     ControllerEngine.initialize(application_name, application_directory)
     print("Initialisation module de log : ")
-    path_log = file_manager.path_build(Constantine.APP_DIR,'konfigurator/log.yml')
+    path_log = file_manager.path_build(Constantine.APP_DIR, 'konfigurator/log.yml')
     TrackingManager.initialisation(path_log, logger='development', project_name=application_name)
 
     # Si tu veux faire un nettoyage après

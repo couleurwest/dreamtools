@@ -9,7 +9,7 @@ from pathlib import Path
 """
 Module complémentaire
 ============================
-pathfile : dreamtools_dreamgeeker/features.py
+pathfile : dreamtools/features.py
 """
 
 def lets_go():
