@@ -30,7 +30,7 @@ class ConfigController:
 
         :param str p: Fichier de configuration
         :param str ref: référence parameters à récupérer, optionnels
-        :param str m: bytes par default
+        :param str m: str|bytes par default
         :return: configuration | None
 
         """

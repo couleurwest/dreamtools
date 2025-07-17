@@ -1,7 +1,6 @@
 import pytest
+from dreamtools import file_manager
 
-
-from . import file_manager
 from src.dreamtools.controller_manager import ControllerEngine
 from src.dreamtools.mailing_manager import MailController
 from src.dreamtools.tracking_manager import TrackingManager

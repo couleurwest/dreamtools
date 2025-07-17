@@ -498,3 +498,17 @@ def dictionary(dictionnaire):
             document = dictionnaire
 
     return document
+
+
+def ensure_bytes (element:str|bytes|bytearray) -> bytes:
+    # Normalisation de client_secret
+    if isinstance(element, str):
+        element = element.encode("utf-8")  # ou "ascii" selon ton contexte
+    elif isinstance(element, bytearray):
+        element = bytes(element)  # on convertit tout en `bytes`
+    return element
+
+def ensure_string(element: str | bytes | bytearray) -> str:
+    if isinstance(element, (bytes, bytearray)):
+        return element.decode("utf-8")  # ou "ascii" si tu sais que c'est sûr
+    return element
