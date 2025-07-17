@@ -1,0 +1,5 @@
+#!/bin/bash
+
+git commit -m "Publication du projet sur pypi"
+flit build
+flit publish

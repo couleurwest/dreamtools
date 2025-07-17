@@ -261,22 +261,8 @@ def pwd_maker(i_size=12):
     return s_chaine
 
 
-def code_maker(i_size=4):
-    """Génération d'une chaine aléatoire composé de lettre et de chiffres
 
-    :param int i_size: taille du code
-    :rtype str:
-    """
-    ll = list(ascii_letters + digits)
-    s = ''
-
-    for i in range(0, i_size):
-        s += choice(ll)
-
-    return s
-
-
-def code_aleatoire(n=None):
+def code_maker(n=None):
     if n is None:
         n = random.randint(6, 24)
     alphabet = ascii_letters + digits
