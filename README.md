@@ -74,13 +74,17 @@ dreamtools/
 │   ├── mailing.yml         # Templates d'e-mail personnalisables
 │   └── log.yml             # Configuration du logger
 ├── __init__.py
-├── cli.py                  # Entrée en ligne de commande
-├── validators.py           # Validation (emails, URL, etc.)
-├── images.py               # Traitement d’images (Pillow)
-├── exceptions.py           # Exceptions métiers avec suivi
-├── toolbox.py              # Fonctions utilitaires diverses
-└── logging_conf.yaml       # Fichier de secours (logger minimal)
-
+├── config_manager
+├── controller_manager  
+├── crypting_manager  
+├── date_manager  
+├── exception_manager # Exceptions métiers avec suivi
+├── file_manager  
+├── image_manager   # Traitement d’images (Pillow)
+├── mailing_manager 
+├── toolbox  # Fonctions utilitaires diverses
+├── tracking_manager  
+├── validators_manager  # Validation (emails, URL, etc.)
 ```
 
 ## 🪪 Licence

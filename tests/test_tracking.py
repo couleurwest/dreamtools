@@ -1,6 +1,6 @@
-from tests import fixation
 from src.dreamtools.exception_manager import AccountException
-from src.dreamtools import TrackingManager
+from tests import fixation
+from . import TrackingManager
 
 
 def test_tracking_info(fixation):

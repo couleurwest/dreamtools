@@ -1,9 +1,10 @@
 import pytest
 
+
 from src.dreamtools import file_manager
-from src.dreamtools import ControllerEngine
+from src.dreamtools.controller_manager import ControllerEngine
 from src.dreamtools.mailing_manager import MailController
-from src.dreamtools import TrackingManager
+from src.dreamtools.tracking_manager import TrackingManager
 
 
 class Constantine(ControllerEngine):
