@@ -28,6 +28,3 @@ dreamtools-init = "dreamtools_dreamgeeker.cli:main"
 Homepage = "https://couleurwest-it.com"
 Repository = "https://github.com/couleurwest/dreamtools"
 
-
-[tool.setuptools]
-packages = ["mon_projet"]
