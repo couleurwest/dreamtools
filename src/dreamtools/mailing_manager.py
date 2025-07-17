@@ -3,6 +3,10 @@
 
 __all__ = ['MailController']
 
+import os
+from email import encoders
+from email.mime.base import MIMEBase
+
 """
 Module de Gestion de mail_object préparés
 
@@ -62,7 +66,7 @@ class MailController:
     def __post_init__(self):
         self.SMTP_IDENTITY = f"{self.SMTP_USER_NAME} <{self.SMTP_AUTH_EMAIL}>"
 
-    def send_mail(self, subject:str, receivers:str, d_msg, to_receiver:str =None):
+    def send_mail(self, subject:str, receivers:str, d_msg, to_receiver:str =None, **kwargs):
         """ Envoie du mail_object
 
         :param subject: Sujet du mail_object
@@ -81,14 +85,32 @@ class MailController:
         message["From"] = self.SMTP_IDENTITY
         message["To"] = to_receiver or receivers
 
+        if 'cc' in kwargs:
+            message["Cc"] = kwargs.pop('cc')
+
+        if 'cci' in kwargs:
+            message["Cci"] = kwargs.pop('cci')
+
         TrackingManager.flag("SEND_mail_object:Paramétrage contenu mail_object")
         content = d_msg.get('text')
-        content = MIMEText(content)
+        content = MIMEText(content, 'plain', 'utf-8')
         message.attach(content)
 
         if d_msg.get('html'):
             content = d_msg.get('html')
             content = MIMEText(content, "html")
+            message.attach(content)
+
+        if kwargs.get('file'):
+            attachements = kwargs.pop('file')
+            filename = os.path.basename(attachements)
+
+            with open(attachements, "rb") as attachment:
+                content = MIMEBase('wwwcwest', 'octate-stream', Name=filename)
+                content.set_payload(attachment.read())
+
+            encoders.encode_base64(content)
+            content.add_header('Content-Disposition', f"attachment'; filename={filename}")
             message.attach(content)
 
         TrackingManager.flag("SEND_mail_object:Connexion SMTP")
@@ -100,7 +122,7 @@ class MailController:
 
         return True
 
-    def presend(self, email:str, code:str, dest_name:str = '', **data_field):
+    def presend(self, email:str, code:str, dest_name:str = '', attachement=None, dest_cc=None, dest_cci=None, **data_field):
         """
             Prépare un e-mail avant envoi en chargeant un modèle de message et en injectant les données.
 
@@ -132,7 +154,13 @@ class MailController:
                 dest_name="Mme Dupont",
                 nom="Marie",
                 date="16 juillet 2025"
-            )  """
+            )
+            :param dest_name:
+            :param code:
+            :param email:
+            :param dest_cci:
+            :param dest_cc:
+            :param attachement: """
         TrackingManager.flag(f'PRESEND:Loading template {code}')
         if code == 'custom' and data_field.get('template_email'):
             template_email = data_field['template_email']
@@ -153,6 +181,8 @@ class MailController:
 
         item_tracking =f'**************************** Envoi ({code}) -> {email}'
         TrackingManager.flag(item_tracking)
-        send = TrackingManager.fntracker(self.send_mail, item_tracking, template_email.get('subject'),   email, {'text': part1, 'html': part2}, to_receiver)
+        send = TrackingManager.fntracker(self.send_mail, item_tracking, template_email.get('subject'),
+                                         email, {'text': part1, 'html': part2}, to_receiver,
+                                         attachment=attachement, cc=dest_cc, cci=dest_cci)
 
         return send.succeed
