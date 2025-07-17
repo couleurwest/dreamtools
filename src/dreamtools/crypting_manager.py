@@ -1,6 +1,6 @@
 from argon2.exceptions import VerifyMismatchError
 
-from src.dreamtools.toolbox import ensure_bytes
+from .toolbox import ensure_bytes
 
 _all_ = ['CryptoManager']
 import base64
