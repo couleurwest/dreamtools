@@ -5,13 +5,13 @@ build-backend = "flit_core.buildapi"
 [project]
 name = "dreamtools-dreamgeeker"
 authors = [{name = "Ketsia LENTIN", email = "saraswati@3p0.net"}]
-maintainers = [{name = "Couleur West IT", email = "contact@couleurwest-it.com"}]
 description = "Outils Python pour projets robustes : validation, journalisation, mailing, image, etc."
+dynamic = ["version"]
+license = {text = "MIT"}
+maintainers = [{name = "Couleur West IT", email = "contact@couleurwest-it.com"}]
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.12"
-license = {text = "MIT"}
 dependencies = ["argon2", "base58", "beautifulsoup4","Cerberus", "cryptography", "dnspython","httpx", "pillow", "pytz", "PyYAML", "tzlocal"]
-dynamic = ["version"]
 
 classifiers = [
   "Programming Language :: Python :: 3",
@@ -24,8 +24,6 @@ dreamtools-init = "dreamtools.cli:main"
 [tool.flit.module]
 name = "dreamtools"
 
-[tool.flit.sdist]
-include = ["src"]
 
 [project.urls]
 Homepage = "https://couleurwest-it.com"

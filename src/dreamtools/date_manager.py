@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# dreamtools/date_manager.py
+# dreamtools-dreamgeeker/date_manager.py
 
 """
 Module de Gestion des Dates

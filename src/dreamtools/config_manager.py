@@ -4,7 +4,7 @@ _all_ = ['ConfigController']
 """
 Gestion fichiers de configurations (YAML)
 
-pathfile : dreamtools/config_manager.py
+pathfile : dreamtools-dreamgeeker/config_manager.py
 
 Repertoires par défaut
 ----------------------

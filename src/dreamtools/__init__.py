@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
-__all__ = ['config_manager', 'controller_manager', 'crypting_manager', 'date_manager', 'exception_manager',
-           'file_manager', 'image_manager', 'mailing_manager', 'toolbox', 'tracking_manager',
-           'validators_manager']
+__all__ = [
+    'config_manager', 'controller_manager', 'crypting_manager', 'date_manager',
+    'exception_manager', 'file_manager', 'image_manager', 'mailing_manager',
+    'toolbox', 'tracking_manager', 'validators_manager'
+]
 """
-Liste de fonction standard reutilisable
+Liste de fonctions standards réutilisables
 
 .. author: Dreamgeeker
 """
@@ -12,7 +14,7 @@ __author__ = "Ketsia LENTIN"
 __copyright__ = "Copyright 2021, CouleurWest IT"
 __credits__ = "Ketsia LENTIN"
 __license__ = "MIT"
-__version__ = "2025.2.4"
+__version__ = "2025.2.5"
 __email__ = "contact@couleurwest-it"
 __status__ = "Production"
 __docformat__ = 'reStructuredText'
