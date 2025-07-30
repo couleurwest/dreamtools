@@ -28,6 +28,7 @@ Constantes globales
 
 """
 import ast
+import base64
 import random
 import re
 import sys
@@ -47,6 +48,14 @@ RGX_PWD = fr'.*(?=.{{8,12}})(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[{RGX_PUNCT}])
 RGX_PHONE = r'^0[1-9]\d{8}$'
 RGX_URL = r'https?:\/\/(www\.)?[-a-z0-9@:%._\+~#=]{1,256}\.[a-z0-9()]{1,6}\b([-a-z0-9()@:%_\+.~#?&//=]*)'
 
+
+import pyperclipfix
+
+def clipboard_copy():
+    pyperclipfix.copy('The text to be copied to the clipboard.')
+def clipboard_paste():
+    pyperclipfix.paste()
+'The text to be copied to the clipboard.'
 
 def print_err(*args, **kwargs):
     """Ecriture sur le flux erreur de la console
@@ -500,15 +509,20 @@ def dictionary(dictionnaire):
     return document
 
 
-def ensure_bytes (element:str|bytes|bytearray) -> bytes:
-    # Normalisation de client_secret
+def ensure_bytes(element: str | bytes | bytearray) -> bytes:
+    if isinstance(element, bytes):
+        return element
+    if isinstance(element, bytearray):
+        return bytes(element)
     if isinstance(element, str):
-        element = element.encode("utf-8")  # ou "ascii" selon ton contexte
-    elif isinstance(element, bytearray):
-        element = bytes(element)  # on convertit tout en `bytes`
-    return element
+        return element.encode("utf-8")  # ou "ascii" si tout est ASCII
+    raise TypeError(f"Unsupported type: {type(element)}")
+
 
 def ensure_string(element: str | bytes | bytearray) -> str:
-    if isinstance(element, (bytes, bytearray)):
-        return element.decode("utf-8")  # ou "ascii" si tu sais que c'est sûr
-    return element
+    if isinstance(element, str):
+        return element
+    try:
+        return element.decode("utf-8")
+    except UnicodeDecodeError:
+        return base64.b64encode(element).decode()
