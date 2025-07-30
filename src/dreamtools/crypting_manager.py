@@ -1,4 +1,6 @@
 from argon2.exceptions import VerifyMismatchError
+from dreamtools import toolbox
+from sanic_ext.extensions.openapi.openapi import document
 
 from .toolbox import ensure_bytes
 
@@ -62,7 +64,6 @@ class CryptoManager:
     def verify_fingerprint(public_bytes: str|bytes, stored_fingerprint: str) -> bool:
         """Vérifie que l'empreinte générée correspond à celle stockée."""
         fp1 = CryptoManager.generate_fingerprint(public_bytes)
-
         return fp1 == stored_fingerprint
 
     @staticmethod
@@ -84,45 +85,6 @@ class CryptoManager:
         return public_bytes, private_bytes, finger_print
 
     @staticmethod
-    def encrypt_private_key(private_key_byte: str|bytes, client_secret: str|bytes) -> bytes:
-        """Chiffre une clé privée à l'aide d'AES-GCM et retourne un JSON sérialisé."""
-
-        aes_key = CryptoManager.derive_aes_key(CryptoManager.master_key, client_secret)
-        iv = os.urandom(12)  # Vecteur d'initialisation aléatoire
-        encryptor = Cipher(
-            algorithms.AES(aes_key),
-            modes.GCM(iv),
-            backend=default_backend()
-        ).encryptor()
-        encrypted = encryptor.update(private_key_byte) + encryptor.finalize()
-        payload = {
-            "iv": base64.b64encode(iv).decode(),
-            "tag": base64.b64encode(encryptor.tag).decode(),
-            "encrypted_key": base64.b64encode(encrypted).decode()
-        }
-
-        return json.dumps(payload).encode()
-
-    @staticmethod
-    def decrypt_private_key(encrypted_key_data: str|bytes, client_secret: str) -> bytes:
-        """Déchiffre une clé privée AES-GCM à partir d'un JSON sérialisé."""
-        encrypted_key_data = json.loads(encrypted_key_data)
-
-        iv = base64.b64decode(encrypted_key_data['iv'])
-
-        tag = base64.b64decode(encrypted_key_data['tag'].encode())
-        encrypted_key = base64.b64decode(encrypted_key_data['encrypted_key'].encode())
-
-        aes_key = CryptoManager.derive_aes_key(CryptoManager.master_key, client_secret.encode())
-
-        cipher_decrypt = Cipher(
-            algorithms.AES(aes_key),
-            modes.GCM(iv, tag),
-            backend=default_backend()
-        ).decryptor()
-        return cipher_decrypt.update(encrypted_key) + cipher_decrypt.finalize()
-
-    @staticmethod
     def exchange_shared_key(private_key_bytes: bytes, public_key_bytes: bytes):
         """Échange de clés X448 pour générer une clé partagée"""
         private_key_bytes = ensure_bytes(private_key_bytes)
@@ -135,71 +97,58 @@ class CryptoManager:
         return shared_key
 
     @staticmethod
-    def encrypt_document(document: str|bytes, shared_key, client_secret) -> dict:
+    def encrypt_data(dc: str|bytes, shared_key, client_secret) -> str:
         # Générer les clés X448 pour l'expéditeur et le récepteur
         iv = os.urandom(12)  # IV pour AES-GCM
-        aes_key = CryptoManager.derive_aes_key(shared_key,
-                                               client_secret)  # Dériver la clé AES à partir de la clé partagée
-        encryptor = Cipher(
-            algorithms.AES(aes_key),
-            modes.GCM(iv),
-            backend=default_backend()
-        ).encryptor()
-
-        ciphertext = encryptor.update(document) + encryptor.finalize()
+        aes_key = CryptoManager.derive_aes_key(shared_key, client_secret)  # Dériver la clé AES à partir de la clé partagée
+        encryptor = Cipher(algorithms.AES(aes_key),modes.GCM(iv),backend=default_backend()).encryptor()
+        data_bytes = toolbox.ensure_bytes(dc)
+        ciphertext = encryptor.update(data_bytes) + encryptor.finalize()
         tag = encryptor.tag
 
-        return {
-            'ciphertext': base64.b64encode(ciphertext).decode(),
-            'nonce': base64.b64encode(iv).decode(),
-            'tag': base64.b64encode(tag).decode(),
+        encryted_data = {
+            'ciphertext': CryptoManager.encode_secret(ciphertext),
+            'iv': CryptoManager.encode_secret(iv),
+            'tag': CryptoManager.encode_secret(tag)
         }
+        return json.dumps(encryted_data)
 
     @staticmethod
-    def decrypt_document(encrypted_data, shared_key: bytes, secret_key: bytes) -> bytes:
-        """Déchiffre les données avec AES-GCM en utilisant la clé partagée dérivée"""
-        aes_key = CryptoManager.derive_aes_key(shared_key, secret_key)  # Dériver la clé AES à partir de la clé partagée
-
-        ciphertext = base64.b64decode(encrypted_data['ciphertext'])
-        iv = base64.b64decode(encrypted_data['nonce'])
-        tag = base64.b64decode(encrypted_data['tag'])
-
-        cipher_decrypt = Cipher(
-            algorithms.AES(aes_key),
-            modes.GCM(iv, tag),
-            backend=default_backend()
-        ).decryptor()
-
-        document = cipher_decrypt.update(
-            ciphertext) + cipher_decrypt.finalize()
-
-        return document
-
-    @staticmethod
-    def decrypt_message_json(message_crypted, sender_public_key: bytes,
-                             receiver_private_key: bytes, sender_client_secret: bytes) -> dict:
-        """Déchiffre un message JSON en utilisant AES-GCM et l'échange de clés X448"""
-        shared_key = CryptoManager.exchange_shared_key(receiver_private_key, sender_public_key)
-        # Déchiffrer le message
-        decrypted_message = CryptoManager.decrypt_document(message_crypted, shared_key, sender_client_secret)
-
-        return json.loads(decrypted_message.decode())
-
-    @staticmethod
-    def encrypt_message_json(document: dict, receiver_public_key, sender_private_key, sender_client_secret)->dict:
+    def encrypt_message(dc: dict|str, receiver_public_key, sender_private_key, sender_client_secret)->str:
         # Générer les clés X448 pour l'expéditeur et le récepteur
-        shared_key = CryptoManager.exchange_shared_key(sender_private_key, receiver_public_key)
-        document = json.dumps(document).encode()
+        if isinstance(dc, dict):
+            dc = json.dumps(dc)
 
+        shared_key = CryptoManager.exchange_shared_key(sender_private_key, receiver_public_key)
         # Chiffrer le message
-        return CryptoManager.encrypt_document(document, shared_key, sender_client_secret)
+        return CryptoManager.encrypt_data(dc, shared_key, sender_client_secret)
 
     @staticmethod
-    def encrypt(password):
+    def encrypt_password(password):
         """
         Argon2 est une fonction de hachage de mot de passe lauréate du concours Password Hashing Competition.
         """
         return CryptoManager.ph.hash(password)
+
+    @staticmethod
+    def decrypt_encrypted_data(encrypted_data:str, shared_key: str|bytes, secret_key: str|bytes) -> str:
+        """Déchiffre les données avec AES-GCM en utilisant la clé partagée dérivée"""
+        dc = json.loads(encrypted_data)
+        iv = CryptoManager.decode_secret(dc['iv'])
+        tag = CryptoManager.decode_secret(dc['tag'])
+        ciphertext = CryptoManager.decode_secret(dc['ciphertext'])
+
+        aes_key = CryptoManager.derive_aes_key(shared_key, secret_key)  # Dériver la clé AES à partir de la clé partagée
+        cipher_decrypt = Cipher(algorithms.AES(aes_key),modes.GCM(iv, tag),backend=default_backend()).decryptor()
+        decypted_message = cipher_decrypt.update(ciphertext) + cipher_decrypt.finalize()
+
+        return toolbox.ensure_string(decypted_message)
+
+    @staticmethod
+    def decrypt_encrypted_message(message_crypted, receiver_private_key: bytes, sender_public_key: bytes, sender_client_secret: bytes) -> str:
+        """Déchiffre un message JSON en utilisant AES-GCM et l'échange de clés X448"""
+        shared_key = CryptoManager.exchange_shared_key(receiver_private_key, sender_public_key)
+        return CryptoManager.decrypt_encrypted_data(message_crypted, shared_key, sender_client_secret)
 
     @staticmethod
     def check_password(password, hasher):
@@ -252,23 +201,11 @@ class CryptoManager:
         return code_hash[:8]  # Récupère les 8 premiers caractères du code de hachage
 
     @staticmethod
-    def basic_auth_encode(s_id, s_sekret):
-        """Generation d'un autorization basic de type ID:SECRET"""
-        access_token = b64encode(f"{s_id}:{s_sekret}".encode("utf-8")).decode("ascii")
-        return f"Basic {access_token}"
-
-    @staticmethod
-    def basic_auth_decode(access_token):
-        """Generation d'un autorization basic de type ID:SECRET"""
-        access_token = b64decode(access_token.encode("ascii")).decode("utf-8")
-        return access_token.split(":")
-
-    @staticmethod
     def derive_aes_key(auth_key: str|bytes, salt_key: str|bytes)->bytes:
         """Dérive une clé AES de 256 bits à partir de la clé partagée X448 en utilisant HKDF"""
         # Utiliser HKDF pour dériver une clé AES 256 bits
-        auth_key = ensure_bytes(auth_key)
-        salt_key = ensure_bytes(salt_key)
+        auth_key = toolbox.ensure_bytes(auth_key)
+        salt_key = toolbox.ensure_bytes(salt_key)
 
         hkdf = HKDF(
             algorithm=hashes.SHA256(),
@@ -295,26 +232,61 @@ class CryptoManager:
         return Fernet(fernet_key)
 
     @staticmethod
-    def encrypt_jsfile(dc: dict, path_config: str, auth_key: str|bytes, salt_key: str|bytes):
+    def basic_auth_encode(s_id, s_sekret):
+        """Generation d'un autorization basic de type ID:SECRET"""
+        access_token = CryptoManager.encode_secret(f"{s_id}:{s_sekret}")
+        return f"Basic {access_token}"
+
+    @staticmethod
+    def basic_auth_decode(access_token):
+        """Generation d'un autorization basic de type ID:SECRET"""
+        access_token = toolbox.ensure_string(CryptoManager.decode_secret(access_token))
+        return access_token.split(":")
+
+    @staticmethod
+    def encode_secret(secret_data: bytes | str) -> str:
+        secret_data = toolbox.ensure_bytes(secret_data)
+        encrypted_data = b64encode(secret_data)
+        return toolbox.ensure_string(encrypted_data)
+
+    @staticmethod
+    def decode_secret(secret_data: bytes | str) -> bytes:
+        secret_data = toolbox.ensure_string(secret_data)
+        encrypted_data = b64decode(secret_data)
+        return encrypted_data
+
+    @staticmethod
+    def encrypt_secret(secret_data, auth_key, salt_key) -> str:
+        b_cs = toolbox.ensure_bytes(secret_data)
+        engine = CryptoManager.fernet_engine(auth_key, salt_key)
+        secret_data = engine.encrypt(b_cs)
+        return toolbox.ensure_string(secret_data)
+
+    @staticmethod
+    def decrypt_secret(encrypted_secret: bytes | str, auth_key: bytes | str, salt_key: bytes | str) -> str:
+        engine = CryptoManager.fernet_engine(auth_key, salt_key)
+        b_cs = engine.decrypt(encrypted_secret)
+        return toolbox.ensure_string(b_cs)
+
+    @staticmethod
+    def encrypt_file(js: dict, fs: str, auth_key: str, salt_key: str):
         """
             Déchiffre les données d'un fichier et les retourne.
-    
+
             Args:
             fs (str): Le chemin du fichier contenant les données chiffrées.
-    
+
             Returns:
             str: Les données déchiffrées.
         """
+        document = json.dumps(js)
+        sensitive_data = toolbox.ensure_bytes(CryptoManager.encrypt_secret(document, auth_key, salt_key))
 
-        fernet = CryptoManager.fernet_engine(auth_key, salt_key)
-        document = json.dumps(dc)
-        sensitive_data = fernet.encrypt(document.encode())
-
-        with open(path_config, 'wb') as file:
+        with open(fs, 'wb') as file:
             file.write(sensitive_data)
 
     @staticmethod
-    def decrypt_jsfile(path_config:str, auth_key: str|bytes, salt_key: str|bytes):
+    def decrypt_file(fs: str, auth_key: str, salt_key: str):
         """
             Déchiffre les données d'un fichier et les retourne.
 
@@ -324,11 +296,11 @@ class CryptoManager:
             Returns:
             str: Les données déchiffrées.
         """
-        fernet = CryptoManager.fernet_engine(auth_key, salt_key)
+        try:
+            with open(fs, 'rb') as file:
+                encrypted_data = file.read()
 
-        with open(path_config, 'rb') as file:
-            encrypted_data = file.read()
-
-        sensitive_data = fernet.decrypt(encrypted_data).decode()
-
-        return json.loads(sensitive_data)
+            sensitive_data = CryptoManager.decrypt_secret(encrypted_data, auth_key, salt_key)
+            return json.loads(sensitive_data)
+        except Exception as ex:
+            raise Exception('Erreur clé de chiffrage : {}'.format(ex))
