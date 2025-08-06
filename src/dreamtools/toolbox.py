@@ -42,20 +42,24 @@ from bs4 import BeautifulSoup
 
 RGX_ACCENTS = 'àâäãéèêëîïìôöòõùüûÿñç'
 RGX_PUNCT = '#!?$%&_@*+-'
-
 RGX_EMAIL = r'^[a-z0-9_.+-]+@[a-z0-9-]+\.[a-z0-9-.]+$'
-RGX_PWD = fr'.*(?=.{{8,12}})(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[{RGX_PUNCT}]).*'
-RGX_PHONE = r'^0[1-9]\d{8}$'
+RGX_PWD = r'^(?=(?:.*[a-z]){2,})(?=(?:.*[A-Z]){2,})(?=(?:.*\d){2,})(?=(?:.*[!@#$%^&*()_+\-=\[\]{};:\'",.<>\/?\\|`~]){2,}).{9,16}$'
+RGX_PHONE = r'^(0[1-9]\d{8}|(00|\+)\d{6,20})$'
 RGX_URL = r'https?:\/\/(www\.)?[-a-z0-9@:%._\+~#=]{1,256}\.[a-z0-9()]{1,6}\b([-a-z0-9()@:%_\+.~#?&//=]*)'
-
 
 import pyperclipfix
 
+
 def clipboard_copy():
     pyperclipfix.copy('The text to be copied to the clipboard.')
+
+
 def clipboard_paste():
     pyperclipfix.paste()
+
+
 'The text to be copied to the clipboard.'
+
 
 def print_err(*args, **kwargs):
     """Ecriture sur le flux erreur de la console
@@ -270,7 +274,6 @@ def pwd_maker(i_size=12):
     return s_chaine
 
 
-
 def code_maker(n=None):
     if n is None:
         n = random.randint(6, 24)
@@ -414,7 +417,13 @@ def is_valid_email(v: str) -> bool:
 
 def is_valid_password(v: str) -> bool:
     v = clean_space(v)
-    return bool(re.fullmatch(RGX_PWD, v))
+    pattern = re.compile(RGX_PHONE)
+    return bool(pattern.fullmatch(v))
+
+
+def is_valid_phone(v: str) -> bool:
+    v = clean_space(v)
+    return bool(re.fullmatch(r'^(\+|00)?\d[\d ]+$', v))
 
 
 def is_valid_url(link: str) -> bool:

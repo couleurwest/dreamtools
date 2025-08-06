@@ -15,7 +15,7 @@ __copyright__ = "Copyright 2021, CouleurWest IT"
 __credits__ = "Ketsia LENTIN"
 __license__ = "MIT"
 __version__ = "2025.2.5.8"
-__email__ = "contact@couleurwest-it"
+__email__ = "saraswati@3p0.net"
 __status__ = "Production"
 __docformat__ = 'reStructuredText'
 
