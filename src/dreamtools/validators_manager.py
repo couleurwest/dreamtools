@@ -35,20 +35,16 @@ def normalize_phone(value):
 class DreamRegistry:
     email = {'type': 'string', 'is_email': True, 'coerce': lambda v: '' if v is None else v, 'empty': True}
     password = {'type': 'string', 'is_password': True, 'empty': False}
-    url = {'type': 'string', 'is_url': True,  # URL valide
-        'coerce': lambda v: '' if v is None else v, 'empty': True}
+    url = {'type': 'string', 'is_url': True, 'coerce': lambda v: '' if v is None else v, 'empty': True}
     varchar = {'type': 'string', 'coerce': toolbox.clean_space, 'maxlength': 255, 'empty': True, }
-    referenco = {'type': 'string', 'coerce': toolbox.clean_space, 'maxlength': 15, 'empty': True, }
-    referenco_short = {'type': 'string', 'coerce': toolbox.clean_space, 'maxlength': 4, 'empty': True, }
-    phone = {'type': 'string', 'coerce': normalize_phone, 'is_phone': True,
-        # accepte + ou 00, suivi de chiffres et espaces
-        'empty': True, }
+    referenco = {'type': 'string', 'coerce': toolbox.clean_allspace, 'maxlength': 15, 'empty': True, }
+    referenco_short = {'type': 'string', 'coerce': toolbox.clean_allspace, 'maxlength': 4, 'empty': True, }
+    phone = {'type': 'string', 'coerce': normalize_phone, 'is_phone': True, 'empty': True, }
     is_digit = {'type': 'integer', 'coerce': lambda v: int(v) if v and (isinstance(v, int) or v.isdigit()) else v}
 
 
 # --- Schémas génériques enregistrés ---
 schema_registry.add('email_schema', {'email': {'type': 'string', 'regex': toolbox.RGX_EMAIL}})
-
 schema_registry.add('email_schema', {'email': DreamRegistry.email})
 schema_registry.add('password_schema', {'password': DreamRegistry.password})
 schema_registry.add('phone_number_schema', {'phone': DreamRegistry.phone})

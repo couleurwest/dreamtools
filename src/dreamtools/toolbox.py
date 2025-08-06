@@ -47,6 +47,11 @@ RGX_PWD = r'^(?=(?:.*[a-z]){2,})(?=(?:.*[A-Z]){2,})(?=(?:.*\d){2,})(?=(?:.*[!@#$
 RGX_PHONE = r'^(0[1-9]\d{8}|(00|\+)\d{6,20})$'
 RGX_URL = r'https?:\/\/(www\.)?[-a-z0-9@:%._\+~#=]{1,256}\.[a-z0-9()]{1,6}\b([-a-z0-9()@:%_\+.~#?&//=]*)'
 
+RGX_PHONE_PATTERN = re.compile(RGX_PHONE)
+RGX_EMAIL_PATTERN = re.compile(RGX_EMAIL)
+RGX_PWD_PATTERN = re.compile(RGX_PWD)
+RGX_URL_PATTERN = re.compile(RGX_URL)
+
 import pyperclipfix
 
 
@@ -246,8 +251,7 @@ def check_password(s):
     :param str s: chaine à vérifier
     :return bool: True si la chaine est valide
     """
-    r = re.compile(RGX_PWD)
-    return r.match(s)
+    return RGX_PWD_PATTERN.match(s)
 
 
 def pwd_maker(i_size=12):
@@ -392,8 +396,7 @@ def is_empty(item):
 
 
 def find_email(s):
-    reg_email = re.compile(RGX_EMAIL)
-    return list(map(lambda tp: tp[0], reg_email.findall(s)))
+    return list(map(lambda tp: tp[0], RGX_EMAIL_PATTERN.findall(s)))
 
 
 def has_mx_record(domain: str) -> bool:
@@ -407,7 +410,7 @@ def has_mx_record(domain: str) -> bool:
 def is_valid_email(v: str) -> bool:
     try:
         v = clean_allspace(v).lower()
-        if re.fullmatch(RGX_EMAIL, v):
+        if RGX_EMAIL_PATTERN.fullmatch(v):
             domain = v.split('@')[-1]
             return has_mx_record(domain)
     except Exception as ex:
@@ -416,14 +419,13 @@ def is_valid_email(v: str) -> bool:
 
 
 def is_valid_password(v: str) -> bool:
-    v = clean_space(v)
-    pattern = re.compile(RGX_PHONE)
-    return bool(pattern.fullmatch(v))
+    v = clean_allspace(v)
+    return bool(RGX_PWD_PATTERN.fullmatch(v))
 
 
 def is_valid_phone(v: str) -> bool:
-    v = clean_space(v)
-    return bool(re.fullmatch(r'^(\+|00)?\d[\d ]+$', v))
+    v = clean_allspace(v)
+    return bool(RGX_PHONE_PATTERN.fullmatch(v))
 
 
 def is_valid_url(link: str) -> bool:
@@ -432,7 +434,7 @@ def is_valid_url(link: str) -> bool:
         link = f'https://{link}'
 
     url = clean_allspace(link).lower()
-    if not re.fullmatch(RGX_URL, url):
+    if not RGX_URL_PATTERN.fullmatch(url):
         return False
 
     domain = urlparse(url).netloc
