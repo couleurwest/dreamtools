@@ -34,10 +34,11 @@ pathfile : dreamtools-dreamgeeker/pyimaging
 MAX_SIZE = 640
 MIN_SIZE = 200
 
+
 class ImageManager(object):
-    size_max:int
-    size_thumb_max:int
-    
+    size_max: int
+    size_thumb_max: int
+
     def __init__(self, src, dest, size_max=MAX_SIZE, size_thumb_max=MIN_SIZE):
         """
         Preparation image  pour traitement
@@ -58,18 +59,25 @@ class ImageManager(object):
 
         self.size_max = size_max
         self.size_thumb_max = size_thumb_max
-        
+
         self.img = Image.open(src)
         self.exif = None
 
         self._size = self.img.size
         self.format = self.img.format
 
-        self.file = file_manager.file_extension_less(dest)     # on s'assure de retirer l'extension
+        self.file = file_manager.file_extension_less(dest)  # on s'assure de retirer l'extension
 
-        self.resize(size_max)
+        self.resize()
+
     def __enter__(self):
         return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        try:
+            self.img.close()
+        except:
+            pass
 
     @property
     def _size(self):
@@ -79,21 +87,10 @@ class ImageManager(object):
     def _size(self, s):
         self.w, self.h = s
 
-    def save_image_jpeg(self, file_name, img=None):
-        if img is None:
-            img = copy.deepcopy(self.img)  # copie profonde (réplique récursive)
-
-        ImageManager.image_to_rgb(img)
-        file_name = f'{file_name}.jpeg'
-
-        if self.exif:
-            img.save(file_name, TYPE_IMG_JPEG, exif=self.exif)
-        else:
-            img.save(file_name, TYPE_IMG_JPEG)
-
     def image_to_rgb(self):
         if self.img.mode != 'RGB':
             self.img = self.img.convert('RGB')
+            self.extension = TYPE_IMG_JPEG
 
     def white_background(self):
         """
@@ -140,14 +137,14 @@ class ImageManager(object):
             draw.ellipse((0, 0, self.img.width, self.img.height), fill=255)
 
             pos_x = padding
-            pos_y =padding
+            pos_y = padding
 
             # Coller l'image sur le cercle blanc au centre
             bg.paste(self.img, (pos_x, pos_y), mask)
 
         return bg
 
-    def resize(self, size_max=MAX_SIZE, size_min=MIN_SIZE):
+    def resize(self):
         """ Redimensionnement de l'image au format jpg
 
         :param size_min: taille minimum (carré)
@@ -155,9 +152,9 @@ class ImageManager(object):
 
         :return:
         """
-        if self.h < size_min or self.w < size_min:
+        if self.h < self.size_thumb_max or self.w < self.size_thumb_max:
             raise Exception("Image trop petite")
-        elif self.h < size_max or self.w < size_max:
+        elif self.h < self.size_max or self.w < self.size_max:
             return
 
         if self.w >= self.h:
@@ -169,30 +166,39 @@ class ImageManager(object):
 
         self.img.resize((w, h))
 
-    def generate_thumb(self, s=(MIN_SIZE,MIN_SIZE))->ImageFile:
-        """ Thumb Image
-
-        :param tuple[int, int] s: taille image, defaul (200, 200à
-
-        """
-        img = self.img.convert('L')
-        img.thumbnail(s)
-        return img
-
-    def save(self, frm:str|None= None):
+    def save(self, frm: str | None = None):
         """ Thumb Image
         :param frm:
         """
         frm = frm.lower() if frm else self.extension.lower()
         file_name = self.file + '.' + frm
-        self.img.save(file_name, frm.upper())
 
+        if self.extension == TYPE_IMG_PNG and self.exif:
+            self.img.save(file_name, exif=self.exif, quality=90, optimize=True)
+        else:
+            self.img.save(file_name, format=frm, quality=90, optimize=True)
 
-    def save_thumb_image(self):
+    def generate_thumb(self) -> ImageFile:
+        """ Thumb Image
+
+        :param tuple[int, int] s: taille image, defaul (200, 200à
+
+        """
+        thumb = copy.deepcopy(self)
+        thumb.img.thumbnail((self.size_thumb_max, self.size_thumb_max))
+        thumb.file += "_thumb"
+        return thumb
+
+    def save_thumb_image(self, frm: str = TYPE_IMG_JPEG):
         """ Thumb Image
         """
         thumb = self.generate_thumb()
-        self.save_image_jpeg(self.file + "_thumb", thumb)
+        thumb.save(frm=frm)
+
+    def save_image_jpeg(self):
+
+        ImageManager.image_to_rgb(self.img)
+        self.save(frm=TYPE_IMG_JPEG)
 
     def protected(self, artist, description):
         """Ajoute un nom d'artist et le copyright d'une image"""
@@ -212,7 +218,7 @@ class ImageManager(object):
         self.img.save(self.file, TYPE_IMG_JPEG, exif=self.exif)
 
     @staticmethod
-    def directory_parsing(main_directory:str):
+    def directory_parsing(main_directory: str):
         """
         Redimensionne toutes les images contenu dans un répertoire donné + thumb
         :param main_directory:
@@ -223,7 +229,6 @@ class ImageManager(object):
                 imager = ImageManager(f_path, f_path)
                 imager.save()
                 imager.save_thumb_image()
-
 
     @staticmethod
     def treat_uploading(fs, fp):

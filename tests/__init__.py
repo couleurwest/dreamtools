@@ -1,5 +1,5 @@
 import pytest
-from dreamtools import file_manager
+from src.dreamtools import file_manager
 
 from src.dreamtools.controller_manager import ControllerEngine
 from src.dreamtools.mailing_manager import MailController

@@ -1,10 +1,6 @@
-from argon2.exceptions import VerifyMismatchError
-from dreamtools import toolbox
-from sanic_ext.extensions.openapi.openapi import document
-
-from .toolbox import ensure_bytes
-
 _all_ = ['CryptoManager']
+from argon2.exceptions import VerifyMismatchError
+
 import base64
 import json
 import os
@@ -22,6 +18,8 @@ from cryptography.hazmat.primitives.asymmetric import x448
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
+from . import toolbox
+
 
 class CryptoManager:
     """
@@ -36,12 +34,12 @@ class CryptoManager:
 
     @staticmethod
     def set_master_key(master_key: str | bytes):
-        CryptoManager.master_key = ensure_bytes(master_key)
+        CryptoManager.master_key = toolbox.ensure_bytes(master_key)
 
     @staticmethod
-    def generate_fingerprint(public_bytes: str|bytes) -> str:
+    def generate_fingerprint(public_bytes: str | bytes) -> str:
         """Génère un fingerprint SHA-256 pour une clé publique"""
-        public_bytes = ensure_bytes(public_bytes)       # on s'assure que c'est du bytes
+        public_bytes = toolbox.ensure_bytes(public_bytes)  # on s'assure que c'est du bytes
         fingerprint = hashes.Hash(hashes.SHA256())
         fingerprint.update(public_bytes)
         fingerprint_result = fingerprint.finalize()
@@ -50,10 +48,7 @@ class CryptoManager:
     @staticmethod
     def get_fingerprint(public_key) -> str:
         """Retourne un digest SHA256 tronqué (16 premiers caractères) d'une clé publique."""
-        raw_bytes = public_key.public_bytes(
-            encoding=serialization.Encoding.Raw,
-            format=serialization.PublicFormat.Raw
-        )
+        raw_bytes = public_key.public_bytes(encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw)
         digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
         digest.update(raw_bytes)
         full_digest = digest.finalize()
@@ -61,25 +56,20 @@ class CryptoManager:
         return base58_digest[:16]
 
     @staticmethod
-    def verify_fingerprint(public_bytes: str|bytes, stored_fingerprint: str) -> bool:
+    def verify_fingerprint(public_bytes: str | bytes, stored_fingerprint: str) -> bool:
         """Vérifie que l'empreinte générée correspond à celle stockée."""
         fp1 = CryptoManager.generate_fingerprint(public_bytes)
         return fp1 == stored_fingerprint
 
     @staticmethod
-    async def generate_keys()->(bytes, bytes, bytes):
+    async def generate_keys() -> (bytes, bytes, bytes):
         """Génère une paire de clés X448, stocke en DB et retourne les éléments."""
         private_key = x448.X448PrivateKey.generate()
-        private_bytes = private_key.private_bytes(
-            encoding=serialization.Encoding.Raw,
-            format=serialization.PrivateFormat.Raw,
-            encryption_algorithm=serialization.NoEncryption()
-        )
+        private_bytes = private_key.private_bytes(encoding=serialization.Encoding.Raw,
+            format=serialization.PrivateFormat.Raw, encryption_algorithm=serialization.NoEncryption())
         public_key = private_key.public_key()
-        public_bytes = public_key.public_bytes(
-            encoding=serialization.Encoding.Raw,
-            format=serialization.PublicFormat.Raw
-        )
+        public_bytes = public_key.public_bytes(encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw)
         finger_print = CryptoManager.generate_fingerprint(public_bytes)
 
         return public_bytes, private_bytes, finger_print
@@ -87,8 +77,8 @@ class CryptoManager:
     @staticmethod
     def exchange_shared_key(private_key_bytes: bytes, public_key_bytes: bytes):
         """Échange de clés X448 pour générer une clé partagée"""
-        private_key_bytes = ensure_bytes(private_key_bytes)
-        public_key_bytes = ensure_bytes(public_key_bytes)
+        private_key_bytes = toolbox.ensure_bytes(private_key_bytes)
+        public_key_bytes = toolbox.ensure_bytes(public_key_bytes)
 
         private_key = x448.X448PrivateKey.from_private_bytes(private_key_bytes)
         public_key = x448.X448PublicKey.from_public_bytes(public_key_bytes)
@@ -97,24 +87,22 @@ class CryptoManager:
         return shared_key
 
     @staticmethod
-    def encrypt_data(dc: str|bytes, shared_key, client_secret) -> str:
+    def encrypt_data(dc: str | bytes, shared_key, client_secret) -> str:
         # Générer les clés X448 pour l'expéditeur et le récepteur
         iv = os.urandom(12)  # IV pour AES-GCM
-        aes_key = CryptoManager.derive_aes_key(shared_key, client_secret)  # Dériver la clé AES à partir de la clé partagée
-        encryptor = Cipher(algorithms.AES(aes_key),modes.GCM(iv),backend=default_backend()).encryptor()
+        aes_key = CryptoManager.derive_aes_key(shared_key,
+                                               client_secret)  # Dériver la clé AES à partir de la clé partagée
+        encryptor = Cipher(algorithms.AES(aes_key), modes.GCM(iv), backend=default_backend()).encryptor()
         data_bytes = toolbox.ensure_bytes(dc)
         ciphertext = encryptor.update(data_bytes) + encryptor.finalize()
         tag = encryptor.tag
 
-        encryted_data = {
-            'ciphertext': CryptoManager.encode_secret(ciphertext),
-            'iv': CryptoManager.encode_secret(iv),
-            'tag': CryptoManager.encode_secret(tag)
-        }
+        encryted_data = {'ciphertext': CryptoManager.encode_secret(ciphertext), 'iv': CryptoManager.encode_secret(iv),
+            'tag': CryptoManager.encode_secret(tag)}
         return json.dumps(encryted_data)
 
     @staticmethod
-    def encrypt_message(dc: dict|str, receiver_public_key, sender_private_key, sender_client_secret)->str:
+    def encrypt_message(dc: dict | str, receiver_public_key, sender_private_key, sender_client_secret) -> str:
         # Générer les clés X448 pour l'expéditeur et le récepteur
         if isinstance(dc, dict):
             dc = json.dumps(dc)
@@ -131,7 +119,7 @@ class CryptoManager:
         return CryptoManager.ph.hash(password)
 
     @staticmethod
-    def decrypt_encrypted_data(encrypted_data:str, shared_key: str|bytes, secret_key: str|bytes) -> str:
+    def decrypt_encrypted_data(encrypted_data: str, shared_key: str | bytes, secret_key: str | bytes) -> str:
         """Déchiffre les données avec AES-GCM en utilisant la clé partagée dérivée"""
         dc = json.loads(encrypted_data)
         iv = CryptoManager.decode_secret(dc['iv'])
@@ -139,13 +127,14 @@ class CryptoManager:
         ciphertext = CryptoManager.decode_secret(dc['ciphertext'])
 
         aes_key = CryptoManager.derive_aes_key(shared_key, secret_key)  # Dériver la clé AES à partir de la clé partagée
-        cipher_decrypt = Cipher(algorithms.AES(aes_key),modes.GCM(iv, tag),backend=default_backend()).decryptor()
+        cipher_decrypt = Cipher(algorithms.AES(aes_key), modes.GCM(iv, tag), backend=default_backend()).decryptor()
         decypted_message = cipher_decrypt.update(ciphertext) + cipher_decrypt.finalize()
 
         return toolbox.ensure_string(decypted_message)
 
     @staticmethod
-    def decrypt_encrypted_message(message_crypted, receiver_private_key: bytes, sender_public_key: bytes, sender_client_secret: bytes) -> str:
+    def decrypt_encrypted_message(message_crypted, receiver_private_key: bytes, sender_public_key: bytes,
+                                  sender_client_secret: bytes) -> str:
         """Déchiffre un message JSON en utilisant AES-GCM et l'échange de clés X448"""
         shared_key = CryptoManager.exchange_shared_key(receiver_private_key, sender_public_key)
         return CryptoManager.decrypt_encrypted_data(message_crypted, shared_key, sender_client_secret)
@@ -201,23 +190,18 @@ class CryptoManager:
         return code_hash[:8]  # Récupère les 8 premiers caractères du code de hachage
 
     @staticmethod
-    def derive_aes_key(auth_key: str|bytes, salt_key: str|bytes)->bytes:
+    def derive_aes_key(auth_key: str | bytes, salt_key: str | bytes) -> bytes:
         """Dérive une clé AES de 256 bits à partir de la clé partagée X448 en utilisant HKDF"""
         # Utiliser HKDF pour dériver une clé AES 256 bits
         auth_key = toolbox.ensure_bytes(auth_key)
         salt_key = toolbox.ensure_bytes(salt_key)
 
-        hkdf = HKDF(
-            algorithm=hashes.SHA256(),
-            length=32,  # 32 bytes = 256 bits
-            salt=salt_key,
-            info=b"SharedKeyDerivation",
-            backend=default_backend()
-        )
+        hkdf = HKDF(algorithm=hashes.SHA256(), length=32,  # 32 bytes = 256 bits
+            salt=salt_key, info=b"SharedKeyDerivation", backend=default_backend())
         return hkdf.derive(auth_key)
 
     @staticmethod
-    def fernet_engine(auth_key: str|bytes, salt_key: str|bytes)->Fernet:
+    def fernet_engine(auth_key: str | bytes, salt_key: str | bytes) -> Fernet:
         """
             Déchiffre les données d'un fichier et les retourne.
     
