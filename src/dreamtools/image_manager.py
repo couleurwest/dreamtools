@@ -1,9 +1,8 @@
-import copy
-
-_all_ = ['ImageManager']
 # -*- coding: utf-8 -*-
 # project/dreamtools-dreamgeeker/image_manager.py
+_all_ = ['ImageManager', 'TYPE_IMG_JPEG', 'TYPE_IMG_PNG', 'TYPE_IMG_GIF', 'TYPE_IMG_WEBP', 'TYPE_IMG_SVG']
 
+import copy
 import os
 from io import BytesIO
 
@@ -19,6 +18,7 @@ TYPE_IMG_JPEG = 'JPEG'
 TYPE_IMG_PNG = 'PNG'
 TYPE_IMG_GIF = 'GIF'
 TYPE_IMG_WEBP = 'WEBP'
+TYPE_IMG_SVG = "SVG"
 
 """
 Class CImagine

@@ -1,4 +1,6 @@
 import re
+import uuid
+from datetime import date
 
 from cerberus import Validator, TypeDefinition
 from cerberus.validator import schema_registry
@@ -6,7 +8,11 @@ from cerberus.validator import schema_registry
 from . import toolbox
 
 # --- Types personnalisés ---
-custom_types = {'phone': TypeDefinition('phone', (str,), ()), 'password': TypeDefinition('password', (str,), ()), }
+custom_types = {
+    'uuid': TypeDefinition('uuid', (uuid.UUID, ), ()),
+    'date': TypeDefinition('date', (date,), ()),
+    'phone': TypeDefinition('phone', (str,), ()),
+    'password': TypeDefinition('password', (str,), ()), }
 
 
 # --- Fonction de nettoyage ---
