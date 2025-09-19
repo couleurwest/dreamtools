@@ -6,13 +6,13 @@ class Reponce:
 
     def __init__(self, message:str='Opération réussie', title:str='', status:int=200, *args, **kwargs):
         self.status = status
-        self.detail = args or kwargs
+        self.detail = args if len(args) > 1 else args[0] if len(args)== 1 else kwargs
         self.message = message
         self.title = title
 
 
     @property
-    def succeed(self):
+    def is_success(self):
         """ Renvoie le status de la réponse
 
         :rtype: bool
@@ -40,7 +40,11 @@ class ExceptionManager(Exception):
 
 
     def __str__(self):
-        return str(f'[{self.title}] : self.message - {self.status}')
+        return str(f'[{self.title}] : {self.message} - {self.status}')
+
+    @property
+    def is_success(self):
+        return 200 <= self.status < 300
 
 class RequestException(ExceptionManager):
     def __init__(self):
@@ -52,9 +56,9 @@ class RequestException(ExceptionManager):
 
 
 class AuthException(ExceptionManager):
-    def __init__(self):
+    def __init__(self , message="Identifiants incorrects. Veuillez vérifier votre login ou mot de passe."):
         super().__init__(
-            "Identifiants incorrects. Veuillez vérifier votre login ou mot de passe.",
+            message,
             "Échec d’authentification",
             401
         )
@@ -106,27 +110,15 @@ class RessourceException(ExceptionManager):
 
 
 class PageException(ExceptionManager):
-    def __init__(self):
-        super().__init__(
-            "La page que vous cherchez n’existe pas.",
-            "Page non trouvée",
-            404
-        )
+    def __init__(self, message="La page que vous cherchez n’existe pas."):
+        super().__init__(message,"Page non trouvée",404 )
 
 
 class ParamsException(ExceptionManager):
-    def __init__(self):
-        super().__init__(
-            "Les données soumises sont invalides ou incomplètes.",
-            "Paramètres incorrects",
-            400
-        )
+    def __init__(self, message="Les données soumises sont invalides ou incomplètes."):
+        super().__init__(message ,"Paramètres incorrects",400)
 
 
 class TooManyRequests(ExceptionManager):
-    def __init__(self):
-        super().__init__(
-            "Trop de requêtes ont été envoyées en peu de temps. Merci de patienter avant de réessayer.",
-            "Requêtes trop fréquentes",
-            429
-        )
+    def __init__(self, message="Trop de requêtes ont été envoyées en peu de temps. Merci de patienter avant de réessayer."):
+        super().__init__(message, "Requêtes trop fréquentes",429)

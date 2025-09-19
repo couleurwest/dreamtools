@@ -12,17 +12,6 @@ Constantes globales
 --------------------
 .. note::
 
-    * RGX_ACCENTS = 'àâäãéèêëîïìôöòõùüûÿñç'
-    * RGX_EMAIL = Expression reguliere email
-    * RGX_PUNCT = Caractere speciaux autorisé pour mot de passe
-    * RGX_PWD = Expression régulière pour un mot de passe de 8 à 12 avec un car.Special/une Majuscule/Une minuscule
-    * RGX_PHONE = Expression réguliere remative à un numéro de téléphon
-    * RGX_URL = expression reguliere pour URL
-    * *PROJECT_DIR*  : Repertoire du projet
-    * *APP_NAME* : Nom de l'application
-    * *APP_DIR* : PROJECT_DIR/APP_NAME
-    * *TMP_DIR* : PROJECT_DIR/tmp
-
 .. warning::
     Il faut configurer l'application afin d'avoir accès au variable PROJECT_DIR, APP_NAME, TMP_DIR
 
@@ -44,7 +33,7 @@ RGX_ACCENTS = 'àâäãéèêëîïìôöòõùüûÿñç'
 RGX_PUNCT = '#!?$%&_@*+-'
 RGX_EMAIL = r'^[a-z0-9_.+-]+@[a-z0-9-]+\.[a-z0-9-.]+$'
 RGX_PWD = r'^(?=(?:.*[a-z]){2,})(?=(?:.*[A-Z]){2,})(?=(?:.*\d){2,})(?=(?:.*[!@#$%^&*()_+\-=\[\]{};:\'",.<>\/?\\|`~]){2,}).{9,32}$'
-RGX_PHONE = r'^(0[1-9]\d{8}|(00|\+)\d{6,20})$'
+RGX_PHONE = r'^(?:0\d(?:[ .-]?\d{2}){4}|(?:\+|00)\d{1,3}(?:[ .-]?\d+){4,})$'
 RGX_URL = r'https?:\/\/(www\.)?[-a-z0-9@:%._\+~#=]{1,256}\.[a-z0-9()]{1,6}\b([-a-z0-9()@:%_\+.~#?&//=]*)'
 
 RGX_PHONE_PATTERN = re.compile(RGX_PHONE)
@@ -278,10 +267,13 @@ def pwd_maker(i_size=12):
     return s_chaine
 
 
-def code_maker(n=None):
+def code_maker(n=None, w_punk= False):
     if n is None:
         n = random.randint(6, 24)
     alphabet = ascii_letters + digits
+    if w_punk:
+        alphabet += RGX_PUNCT
+
     return ''.join(choice(alphabet) for _ in range(n))
 
 
@@ -430,21 +422,23 @@ def is_valid_phone(v: str) -> bool:
 
 def is_valid_url(link: str) -> bool:
     # Force ajout du schéma si manquant
-    if not link.startswith(('http://', 'https://')):
-        link = f'https://{link}'
+    try:
+        if not link.startswith(('http://', 'https://')):
+            link = f'https://{link}'
 
-    url = clean_allspace(link).lower()
-    if not RGX_URL_PATTERN.fullmatch(url):
+        url = clean_allspace(link).lower()
+        if not RGX_URL_PATTERN.fullmatch(url):
+            return False
+
+        domain = urlparse(url).netloc
+        if not domain:
+            return False
+
+        if is_valid_domain(domain):
+            return verify_link(url)
+
+    except Exception:
         return False
-
-    domain = urlparse(url).netloc
-    if not domain:
-        return False
-
-    if is_valid_domain(domain):
-        return verify_link(url)
-
-    return False
 
 
 def is_valid_domain(domain: str) -> bool:

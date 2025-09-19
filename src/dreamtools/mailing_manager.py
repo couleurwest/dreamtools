@@ -122,7 +122,19 @@ class MailController:
 
         return True
 
-    def presend(self, email:str, code:str, dest_name:str = '', attachement=None, dest_cc=None, dest_cci=None, **data_field):
+    def load_mail(self, code:str):
+        mailer = ConfigController.json_loading(self.PATH_TEMPLATES, 'data')
+        template_email = mailer[code]
+        footer = mailer.get('footer') or {'text': '', 'html': ''}
+
+        template_email['text'] += footer['text']
+        template_email['html'] += footer['html']
+
+        del mailer
+
+        return template_email
+
+    async def presend(self, email:str, code:str, dest_name:str = '', attachement=None, dest_cc=None, dest_cci=None, **data_field):
         """
             Prépare un e-mail avant envoi en chargeant un modèle de message et en injectant les données.
 
@@ -165,10 +177,7 @@ class MailController:
         if code == 'custom' and data_field.get('template_email'):
             template_email = data_field['template_email']
         else:
-            template_email = ConfigController.loading(self.PATH_TEMPLATES, code)
-            footer = ConfigController.loading(self.PATH_TEMPLATES, 'footer') or {'text':'', 'html':''}
-            template_email['text'] += footer['text']
-            template_email['html'] += footer['html']
+            template_email = self.load_mail(code)
 
         TrackingManager.flag('PRESEND: Preparation')
 

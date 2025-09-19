@@ -48,6 +48,7 @@ class TrackingManager:
             TrackingManager.tracker = logging.getLogger(logger)
             TrackingManager.system_tracker = logging.getLogger("system")
 
+
         except Exception as e:
             toolbox.print_err(e, ': ', 'Error in Logging Configuration. Using default configs')
             logging.basicConfig(level=logging.NOTSET)
@@ -66,7 +67,7 @@ class TrackingManager:
                                     extra={'title': title, 'stacklevel': 2})
 
     @staticmethod
-    def alert_tracking(msg, title):
+    def warning_tracking(msg, title):
         """ Message d'alerte (WARNING)
 
         :param str msg: message à ecrire dans logs
@@ -113,13 +114,13 @@ class TrackingManager:
         """
         Récupération et traitement des exceptions
 
-        :param status: 
+        :param status:
         :param ex: Exception
         :param str title: Information
         """
 
         try:
-            status = getattr(ex, 'status', status) or status
+            status = getattr(ex, 'status', getattr(ex, 'status_code', status))
             if TrackingManager.LOG_TRACKED != '':
                 if TrackingManager.system_tracker:
                     TrackingManager.system_tracking('## ' + TrackingManager.LOG_TRACKED + ' ##', title, logging.INFO)
@@ -136,12 +137,12 @@ class TrackingManager:
         except Exception as sex:
             toolbox.print_err('*****************  Erreur système *****************: \n', str(sex))
             toolbox.print_err('** Erreur interceptée : ', str(ex))
-            return ExceptionManager(str(ex), status=status)
+            return ExceptionManager(str(ex), title, status=status)
 
     @staticmethod
     def fntracker(fn, action, *args, **kwargs):
         """ Execution "securisé" d'une fonction avec gestions des erreurs
-        
+
         :param fn: fonction a executer
         :param action: Titre de l'execution pour tracabilité
         :param args: argument de la fonction
@@ -160,7 +161,49 @@ class TrackingManager:
         try:
             TrackingManager.flag('{}'.format(action))
             if inspect.iscoroutinefunction(fn):
-                r = asyncio.run(fn(*args, **kwargs))
+
+                try:
+                    loop = asyncio.get_running_loop()
+                except RuntimeError:
+                    loop = None
+
+                if loop and loop.is_running():
+                    # Si on est déjà dans une boucle (ex: PyCharm ou notebook)
+                    task = asyncio.ensure_future(fn(*args, **kwargs))
+                    r = Reponce("Action réussi", action, 200, )
+                else:
+                    r = asyncio.run(fn(*args, **kwargs))
+            else:
+                r = fn(*args, **kwargs)
+
+            return r if isinstance(r, Reponce) else Reponce("Action réussi", action, 200, r)
+
+        except Exception as ex:
+            return TrackingManager.exception_tracking(ex, action)
+
+    @staticmethod
+    async def asynctracker(fn, action, *args, **kwargs):
+        """ Execution "securisé" d'une fonction avec gestions des erreurs
+
+        :param fn: fonction a executer
+        :param action: Titre de l'execution pour tracabilité
+        :param args: argument de la fonction
+        :param kwargs: parametres supplementaire (status par defaut en cas de reussite)
+        :rtype: CReponder
+
+        :Exemple:
+            >>> r = TrackingManager.fntracker(fn, 'Test de convertion int', 'j')
+            >>> r.response
+            {'message': "invalid literal for int() with base 10: 'j'", 'data': None, 'status_code': 500}
+            >>> r = TrackingManager.fntracker(fn, 'Test de convertion int', '589321')
+            >>> r.response
+            {'message': None, 'data': 589321, 'status_code': 200}
+        """
+
+        try:
+            TrackingManager.flag('{}'.format(action))
+            if inspect.iscoroutinefunction(fn):
+                r = await fn(*args, **kwargs)
             else:
                 r = fn(*args, **kwargs)
 

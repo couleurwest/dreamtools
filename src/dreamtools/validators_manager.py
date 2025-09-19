@@ -14,6 +14,13 @@ custom_types = {
     'phone': TypeDefinition('phone', (str,), ()),
     'password': TypeDefinition('password', (str,), ()), }
 
+def safe_float(value):
+    if value in ("", None):
+        return None
+    try:
+        return float(value)
+    except ValueError:
+        return value  # laisser Cerberus gérer l'erreur de type
 
 # --- Fonction de nettoyage ---
 def normalize_phone(value):
@@ -40,20 +47,19 @@ def normalize_phone(value):
 
 class DreamRegistry:
     email = {'type': 'string', 'is_email': True, 'coerce': lambda v: '' if v is None else v, 'empty': True}
-    password = {'type': 'string', 'is_password': True, 'empty': False}
+    password = {'type': 'string', 'is_password': True, 'empty': False, 'required': True}
     url = {'type': 'string', 'is_url': True, 'coerce': lambda v: '' if v is None else v, 'empty': True}
-    varchar = {'type': 'string', 'coerce': toolbox.clean_space, 'maxlength': 255, 'empty': True, }
-    referenco = {'type': 'string', 'coerce': toolbox.clean_allspace, 'maxlength': 15, 'empty': True, }
-    referenco_short = {'type': 'string', 'coerce': toolbox.clean_allspace, 'maxlength': 4, 'empty': True, }
-    phone = {'type': 'string', 'coerce': normalize_phone, 'is_phone': True, 'empty': True, }
+    varchar = {'type': 'string', 'coerce': toolbox.clean_space, 'maxlength': 255, 'empty': True}
+    referenco = {'type': 'string', 'coerce': toolbox.clean_allspace, 'maxlength': 15, 'empty': False, 'required': True}
+    referenco_short = {'type': 'string', 'coerce': toolbox.clean_allspace, 'maxlength': 4, 'empty': True, 'required': False}
+    phone = {'type': 'phone', 'coerce': normalize_phone, 'is_phone': True, 'required': False, 'empty':True}
     is_digit = {'type': 'integer', 'coerce': lambda v: int(v) if v and (isinstance(v, int) or v.isdigit()) else v}
 
 
 # --- Schémas génériques enregistrés ---
-schema_registry.add('email_schema', {'email': {'type': 'string', 'regex': toolbox.RGX_EMAIL}})
 schema_registry.add('email_schema', {'email': DreamRegistry.email})
 schema_registry.add('password_schema', {'password': DreamRegistry.password})
-schema_registry.add('phone_number_schema', {'phone': DreamRegistry.phone})
+schema_registry.add('phone_schema', {'phone': DreamRegistry.phone})
 schema_registry.add('url_schema', {'url': DreamRegistry.url})
 schema_registry.add('link_schema', {'link': DreamRegistry.url})
 
@@ -77,21 +83,30 @@ class DreamValidator(Validator):
 
     def _validate_is_email(self, is_email, field, value):
         """ {'type': 'boolean'} """
+        # Autoriser vide ou None si le champ n'est pas requis
+        if is_email and not value :
+            return
         if is_email and not toolbox.is_valid_email(value):
             self._error(field, "L'adresse email est invalide.")
 
     def _validate_is_url(self, is_url, field, value):
         """ {'type': 'boolean'} """
+        if is_url and not value:
+            return
         if is_url and not toolbox.is_valid_url(value):
             self._error(field, "L'URL est invalide.")
 
     def _validate_is_password(self, is_password, field, value):
         """ {'type': 'boolean'} """
+        if is_password and not value:
+            return
         if is_password and not toolbox.is_valid_password(value):
             self._error(field, "Le mot de passe est invalide.")
 
     def _validate_is_phone(self, is_phone, field, value):
         """ {'type': 'boolean'} """
+        if is_phone and not value:
+            return
         if is_phone and not toolbox.is_valid_phone(value):
             self._error(field, "Le numéro de téléphone est invalide.")
 

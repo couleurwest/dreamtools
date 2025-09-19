@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 # config_manager.py
+import json
+
 _all_ = ['ConfigController']
 """
 Gestion fichiers de configurations (YAML)
@@ -67,3 +69,46 @@ class ConfigController:
             yaml.dump(d, stream=f_yml, allow_unicode=True)
 
         return f
+
+    @classmethod
+    def json_loading(cls, p, ref=None, m='r'):
+        """
+        Récupération des parameters de configuration du fichier <p> section <r>
+
+        :param str p: Fichier de configuration
+        :param str ref: référence parameters à récupérer, optionnels
+        :param str m: str|bytes par default
+        :return: configuration | None
+
+        """
+        config = None
+
+        if file_manager.path_exists(p):
+            try:
+                with open(p, mode=m, encoding='utf-8') as js:
+                    dc = json.load(js)
+
+                    return dc.get(ref) if ref else dc
+            except Exception as ex:
+                print(f'Chargement du fichier {p}:\n', ex)
+
+        return None
+
+    @classmethod
+    def json_saving(cls, d, f, m="w"):
+        """
+        Enregistrement d'un fichier yaml
+        ========================================
+
+        :param dict(str, list(str)) d: données à enregistrer
+        :param str f: nom du fichier
+        :param str m: default (write): mode "w|a", optional
+        :return:
+        """
+        file_manager.makedirs(file_manager.parent_directory(f))
+
+        try:
+            with open(f, mode=m, encoding='utf-8') as js:
+                json.dump({'data' : d}, js, ensure_ascii=False, indent=2)
+        except Exception as ex:
+            print(f'Enregistrement du fichier {f}:\n{d}', ex)

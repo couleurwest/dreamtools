@@ -49,6 +49,19 @@ FR_FORMAT_RSS_ATOM = '%Y-%m-%dT%H:%M:%SZ'  # correction ici
 FRM_ISO = 'iso'
 FRM_TIMESTAMP = 'ts'
 
+ts_minute_to_seconde = 60
+ts_hour_to_seconde = 60 * ts_minute_to_seconde
+ts_day_to_seconde = 24 * ts_hour_to_seconde
+
+def get_ts_from_minute(d):
+    return d * ClickTimer.__ts_minute_to_seconde
+
+def get_ts_from_hour(d):
+    return d * ClickTimer.__ts_hour_to_seconde
+
+def get_ts_from_day(d):
+    return d * ClickTimer.__ts_day_to_seconde
+
 
 def get_timezone(name=None):
     if name:
@@ -106,6 +119,15 @@ def get_now_dtime(ptz=tz_utc) -> datetime:
     :return: Datetime actuel timezone-aware
     """
     return datetime.now(ptz)
+
+def get_today_dte(ptz=tz_utc) -> date:
+    """
+    Renvoie la date et l'heure actuelle avec timezone.
+
+    :param ptz: Fuseau horaire à utiliser (défaut : UTC)
+    :return: Datetime actuel timezone-aware
+    """
+    return date.today()
 
 
 def get_now_str(ptz=tz_utc, fm=FR_FORMAT_DTIME) -> str:
@@ -406,7 +428,7 @@ def jours_feries(y: int = None) -> list[datetime]:
         >>> jours_feries(2025)
         [datetime.datetime(2025, 4, 20, 0, 0, tzinfo=...), ..., datetime.datetime(2025, 12, 25, 0, 0, tzinfo=...)]
     """
-    list_jours_feries = nap_days_dc[f'{y}']
+    list_jours_feries = nap_days_dc.get(f'{y}')
     if not list_jours_feries:
         y = get_now_dtime().year if y is None else int(y)
 
@@ -437,8 +459,17 @@ def is_workday(dtime):
     feries = jours_feries(dtime.year)
     return not (dtime.weekday() in [I_SAT, I_SUN] or dtime in feries)
 
+def last_day_of_month(dtime:  datetime|date):
+    # Dernier jour du mois
+    last_day = calendar.monthrange(dtime.year, dtime.month)[1]
+    return date(dtime.year, dtime.month, last_day)
 
-def dtime_add_days(dtime: datetime, nb: int = 1) -> datetime:
+def first_day_of_month(dtime:  datetime|date):
+    # Dernier jour du mois
+    return date(dtime.year, dtime.month, 1)
+
+
+def dtime_add_days(dtime: datetime|date = None, nb: int = 1,ptz=tz_utc) -> datetime:
     """
     Ajoute un nombre de jours à un datetime.
 
@@ -450,6 +481,10 @@ def dtime_add_days(dtime: datetime, nb: int = 1) -> datetime:
         >>> dtime_add_days(datetime(2025,1,1), 2)
         datetime.datetime(2025, 1, 3, 0, 0)
     """
+    if not dtime:
+        dte = get_today_dte(ptz)
+        dtime = dte_to_dtime(dte)
+
     return dtime + timedelta(days=nb)
 
 
@@ -499,7 +534,8 @@ def dte_add_workday(dtime, nb):
 
 def dtime_diff(dtea: datetime, dteb: datetime):
     """
-    Calcule la différence en jours entre deux dates.
+    Calcule la différence en jours entre deux dates. : dteb - dtea
+     si resultat < 0 alors dteb(dans le passe) < dtea
 
     :param dtea: première date
     :param dteb: deuxième date
@@ -510,7 +546,7 @@ def dtime_diff(dtea: datetime, dteb: datetime):
         9
     """
     t = dteb - dtea
-    return abs(t.days)
+    return t.days
 
 
 def dtime_compare(dtea: datetime, dteb: datetime):

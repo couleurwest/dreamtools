@@ -64,7 +64,7 @@ class ImageManager(object):
         self.exif = None
 
         self._size = self.img.size
-        self.format = self.img.format
+        self._format = self.img.format.lower()
 
         self.file = file_manager.file_extension_less(dest)  # on s'assure de retirer l'extension
 
@@ -123,7 +123,7 @@ class ImageManager(object):
 
         if shape == "rect":
             bg = Image.new("RGB", box, (255, 255, 255))
-            bg.paste(self.img, (padding, padding))
+            bg.paste(self.white_background(), (padding, padding))
         else:  # shape == "circ":
             self.img.convert("RGBA")
             bg = Image.new("RGBA", box, (0, 0, 0, 0))
@@ -147,8 +147,6 @@ class ImageManager(object):
     def resize(self):
         """ Redimensionnement de l'image au format jpg
 
-        :param size_min: taille minimum (carré)
-        :param size_max:  taille maximum de l'image
 
         :return:
         """
@@ -164,26 +162,54 @@ class ImageManager(object):
             w = self.w * self.size_max // self.h
             h = self.size_max
 
-        self.img.resize((w, h))
+        self.img = self.img.resize((w, h))
+
+    def recadre(self,w, h):
+        """"""
+        for coeff in range(11):
+            if w % coeff == 0 and h % coeff == 0:
+                w //=coeff
+                h //= coeff
+                w, h = self.recadre(w, h)
+                break
+
+        return w, h
+
+    def rationalize(self, r_w:int, r_h:int):
+        """ Redimensionnement de l'image au format jpg
+
+        :return:
+        """
+        w = self.w
+        h = w * r_h // r_w
+
+        self.img = self.img.resize((w, h))
 
     def save(self, frm: str | None = None):
         """ Thumb Image
         :param frm:
         """
-        frm = frm.lower() if frm else self.extension.lower()
-        file_name = self.file + '.' + frm
 
-        if self.extension == TYPE_IMG_PNG and self.exif:
+        frm = frm.lower() if frm else self._format
+        file_name = self.file + '.' + frm
+        frm = frm.upper()
+
+        # certaines conversions nécessitent convert()
+        if frm == 'JPEG' and self.img.mode in ('RGBA', 'LA'):
+            # JPEG ne supporte pas alpha → convertir en RGB
+            background = Image.new("RGB", self.img.size, (255, 255, 255))
+            background.paste(self.img, mask=self.img.split()[-1])  # utiliser l'alpha comme masque
+            self.img = background
+
+        file_manager.makedirs(file_manager.parent_directory(file_name))
+
+        if frm == TYPE_IMG_PNG and self.exif:
             self.img.save(file_name, exif=self.exif, quality=90, optimize=True)
         else:
             self.img.save(file_name, format=frm, quality=90, optimize=True)
 
-    def generate_thumb(self) -> ImageFile:
-        """ Thumb Image
-
-        :param tuple[int, int] s: taille image, defaul (200, 200à
-
-        """
+    def generate_thumb(self) :
+        """ Thumb Image       """
         thumb = copy.deepcopy(self)
         thumb.img.thumbnail((self.size_thumb_max, self.size_thumb_max))
         thumb.file += "_thumb"
@@ -195,9 +221,20 @@ class ImageManager(object):
         thumb = self.generate_thumb()
         thumb.save(frm=frm)
 
-    def save_image_jpeg(self):
+    def to_badge(self):
+        """Redimensionnement de l'image
 
-        ImageManager.image_to_rgb(self.img)
+        :return:
+        """
+        thumb = copy.deepcopy(self)
+        thumb.img = thumb.redraw_border('circ', wc=True)
+        thumb.img.thumbnail((64, 64))
+        thumb.file += "_ico"
+
+        return thumb
+
+    def save_image_jpeg(self):
+        self.image_to_rgb()
         self.save(frm=TYPE_IMG_JPEG)
 
     def protected(self, artist, description):
@@ -208,7 +245,7 @@ class ImageManager(object):
         # Image File Directory
         ifd = ImageFileDirectory_v2()
         ifd[_TAGS_r["Artist"]] = artist
-        ifd[_TAGS_r["Copyright"]] = 'Tous droits reserves'
+        ifd[_TAGS_r["Copyright"]] = 'Tous droits réservés'
         ifd[_TAGS_r["Description"]] = description
 
         out = BytesIO()
@@ -261,3 +298,17 @@ class ImageManager(object):
         except Exception as e:
             TrackingManager.exception_tracking(e, '[imgrecorder] Aïe')
             return False
+
+    @staticmethod
+    def get_file_size(i_p):
+        """
+
+        :param i_p: image_path
+        :return:
+        """
+        size_bytes = None
+        try:
+            # Obtenir la taille du fichier image en octets
+            size_bytes = os.path.getsize(i_p)
+        finally:
+            return size_bytes  # Retourne None si la taille ne peut pas être obtenue
