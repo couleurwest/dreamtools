@@ -12,15 +12,15 @@ class Constantine(ControllerEngine):
 # 🔧 Fixture d'initialisation principale
 @pytest.fixture(scope="session")
 def fixation():
-    print("# START")
+
     application_name = "app_name"
     application_directory = file_manager.execution_directory()
 
     ControllerEngine.initialize(application_name, application_directory)
-    print("Initialisation module de log : ")
+
     path_log = file_manager.path_build(Constantine.APP_DIR, 'konfigurator/log.yml')
     TrackingManager.initialisation(path_log, logger='development', project_name=application_name)
 
     # Si tu veux faire un nettoyage après
-    print("--------------------------------------------------------------")
+
 

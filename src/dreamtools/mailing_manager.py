@@ -194,4 +194,4 @@ class MailController:
                                          email, {'text': part1, 'html': part2}, to_receiver,
                                          attachment=attachement, cc=dest_cc, cci=dest_cci)
 
-        return send.succeed
+        return send
