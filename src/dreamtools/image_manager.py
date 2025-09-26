@@ -117,7 +117,7 @@ class ImageManager(object):
             imager.img = imager.redraw_border('circ', True)
             imager.save('png')"""
 
-        padding = 10 if wc else 0
+        padding = 5 if wc else 0
         diameter = 2 * padding
         box = (self.img.width + diameter, self.img.height + diameter)
 
@@ -152,30 +152,32 @@ class ImageManager(object):
         """
         if self.h < self.size_thumb_max or self.w < self.size_thumb_max:
             raise Exception("Image trop petite")
-        elif self.h < self.size_max or self.w < self.size_max:
+        elif self.h < self.size_max and self.w < self.size_max:
             return
 
         if self.w >= self.h:
-            h = self.h * self.size_max // self.w
-            w = self.w
+            coeff = self.w / self.size_max
         else:
-            w = self.w * self.size_max // self.h
-            h = self.size_max
+            coeff = self.h / self.size_max
+
+        h = int(self.h / coeff)
+        w = int(self.w / coeff)
+
 
         self.img = self.img.resize((w, h))
 
-    def recadre(self,w, h):
+    def recadre(self, w, h):
         """"""
         for coeff in range(11):
             if w % coeff == 0 and h % coeff == 0:
-                w //=coeff
+                w //= coeff
                 h //= coeff
                 w, h = self.recadre(w, h)
                 break
 
         return w, h
 
-    def rationalize(self, r_w:int, r_h:int):
+    def rationalize(self, r_w: int, r_h: int):
         """ Redimensionnement de l'image au format jpg
 
         :return:
@@ -208,7 +210,7 @@ class ImageManager(object):
         else:
             self.img.save(file_name, format=frm, quality=90, optimize=True)
 
-    def generate_thumb(self) :
+    def generate_thumb(self):
         """ Thumb Image       """
         thumb = copy.deepcopy(self)
         thumb.img.thumbnail((self.size_thumb_max, self.size_thumb_max))
