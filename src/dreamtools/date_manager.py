@@ -267,11 +267,11 @@ def ts_until_midnight(dtime: datetime | date | None = None, ptz: pytz.timezone =
     :param ptz: timezone cible
     :return: nombre de secondes jusqu'à la prochaine minuit
     """
-    dtime = get_midnight_dtime(dtime, ptz)
-    today = get_midnight_ts(dtime, ptz)
+    ts_now = get_dtime_ts(dtime, ptz)
     tonight = dtime_add_days(dtime)
+    today = get_midnight_ts(tonight, ptz)
 
-    return int(tonight.timestamp() - today)
+    return int(today - ts_now)
 
 
 def utcnow_iso() -> str:
