@@ -170,7 +170,7 @@ class TrackingManager:
                 if loop and loop.is_running():
                     # Si on est déjà dans une boucle (ex: PyCharm ou notebook)
                     task = asyncio.ensure_future(fn(*args, **kwargs))
-                    r = Reponce("Action réussi", action, 200, )
+                    r = Reponce("Action réussi", action, 200 )
                 else:
                     r = asyncio.run(fn(*args, **kwargs))
             else:

@@ -27,7 +27,7 @@ Formats d'identifiants :
 
 Toutes les fonctions respectent la timezone et peuvent travailler avec des objets `date`, `datetime`, ou `timestamp`.
 """
-
+import calendar
 import locale
 from datetime import datetime, timedelta, date
 
@@ -53,15 +53,6 @@ ts_minute_to_seconde = 60
 ts_hour_to_seconde = 60 * ts_minute_to_seconde
 ts_day_to_seconde = 24 * ts_hour_to_seconde
 
-def get_ts_from_minute(d):
-    return d * ClickTimer.__ts_minute_to_seconde
-
-def get_ts_from_hour(d):
-    return d * ClickTimer.__ts_hour_to_seconde
-
-def get_ts_from_day(d):
-    return d * ClickTimer.__ts_day_to_seconde
-
 
 def get_timezone(name=None):
     if name:
@@ -75,7 +66,7 @@ tz_utc = pytz.UTC
 tz_local = get_timezone()
 
 
-def dte_to_dtime(dtime: date, ptz: pytz.timezone = tz_utc, force_midnight=False) -> datetime:
+def dte_to_dtime(dtime: date, ptz = tz_utc, force_midnight=False) -> datetime:
     """
     Convertit un objet `date` en `datetime` à minuit (00:00:00).
 
@@ -157,7 +148,7 @@ def get_today_str(ptz=tz_utc, fm=FR_FORMAT_DATE) -> str:
     return get_now_str(ptz, fm=fm)
 
 
-def get_dtime_str(dtime: datetime | date | None = None, ptz: pytz.timezone = tz_utc,
+def get_dtime_str(dtime: datetime | date | None = None, ptz = tz_utc,
                   fm: str = FRM_ISO) -> str | datetime:
     """
     Formate un datetime ou une date selon le format demandé.
@@ -221,7 +212,7 @@ def dtime_to_fr(dtime: datetime) -> datetime:
     return set_timezone(dtime, tz_local)
 
 
-def get_dtime_ts(dtime: datetime | date | None = None, ptz: pytz.timezone = tz_utc) -> int:
+def get_dtime_ts(dtime: datetime | date | None = None, ptz = tz_utc) -> int:
     """
     Retourne le timestamp (secondes depuis Epoch) d'une date donnée.
 
@@ -233,7 +224,7 @@ def get_dtime_ts(dtime: datetime | date | None = None, ptz: pytz.timezone = tz_u
     return int(dtime.timestamp())
 
 
-def get_midnight_ts(dtime: datetime | date | None = None, ptz: pytz.timezone = tz_utc) -> int:
+def get_midnight_ts(dtime: datetime | date | None = None, ptz = tz_utc) -> int:
     """
     Retourne le timestamp correspondant à minuit du jour spécifié.
 
@@ -245,7 +236,7 @@ def get_midnight_ts(dtime: datetime | date | None = None, ptz: pytz.timezone = t
     return int(dtime.timestamp())
 
 
-def get_yesterday_ts(dtime: datetime | date | None = None, ptz: pytz.timezone = tz_utc) -> int:
+def get_yesterday_ts(dtime: datetime | date | None = None, ptz = tz_utc) -> int:
     """
     Retourne le timestamp à minuit du jour précédent la date spécifiée.
 
@@ -259,7 +250,7 @@ def get_yesterday_ts(dtime: datetime | date | None = None, ptz: pytz.timezone = 
     return int(dtime.timestamp())
 
 
-def ts_until_midnight(dtime: datetime | date | None = None, ptz: pytz.timezone = tz_utc) -> int:
+def ts_until_midnight(dtime: datetime | date | None = None, ptz = tz_utc) -> int:
     """
     Retourne le nombre de secondes jusqu'à minuit suivant la date donnée.
 
@@ -271,7 +262,7 @@ def ts_until_midnight(dtime: datetime | date | None = None, ptz: pytz.timezone =
     tonight = dtime_add_days(dtime)
     today = get_midnight_ts(tonight, ptz)
 
-    return int(today - ts_now)
+    return today - ts_now
 
 
 def utcnow_iso() -> str:
@@ -313,7 +304,7 @@ def set_dte(p_year, p_month, p_day) -> date:
     return date(p_year, p_month, p_day)
 
 
-def set_dtime(p_year, p_month, p_day, ptz: pytz.timezone = tz_utc) -> datetime:
+def set_dtime(p_year, p_month, p_day, ptz = tz_utc) -> datetime:
     """
     Crée un objet `datetime` à partir d'une date numérique, positionnée à minuit.
 
@@ -337,7 +328,7 @@ def ts_to_dtime(ts) -> datetime:
     return datetime.fromtimestamp(int(ts))  # => renvoie datetime
 
 
-def ts_to_str(ts, ptz: pytz.timezone = tz_utc, fm=FR_FORMAT_DTIME):
+def ts_to_str(ts, ptz = tz_utc, fm=FR_FORMAT_DTIME):
     """
     Convertit un timestamp en chaîne formatée.
 
@@ -473,6 +464,7 @@ def dtime_add_days(dtime: datetime|date = None, nb: int = 1,ptz=tz_utc) -> datet
     """
     Ajoute un nombre de jours à un datetime.
 
+    :param ptz:
     :param dtime: datetime de départ
     :param nb: nombre de jours à ajouter (positif ou négatif)
     :return: datetime ajusté
@@ -539,7 +531,7 @@ def dtime_diff(dtea: datetime, dteb: datetime):
 
     :param dtea: première date
     :param dteb: deuxième date
-    :return: différence absolue en jours (int)
+    :return: différence en jours (int)
 
     :Exemple:
         >>> dtime_diff(datetime(2025,1,1), datetime(2025,1,10))
@@ -604,7 +596,7 @@ def dtime_month_str(dtime):
         'janvier 2025'
     """
     dtime = dte_to_dtime(dtime)
-    return get_dtime_str(dtime, "%B %Y")
+    return get_dtime_str(dtime, fm="%B %Y")
 
 
 def month_to_fullmonth(month: int, year: None = None) -> str:

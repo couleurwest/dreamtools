@@ -222,7 +222,12 @@ class CryptoManager:
     @staticmethod
     def basic_auth_encode(s_id: str, s_sekret: str):
         """Generation d'un autorization basic de type ID:SECRET"""
-        access_token = CryptoManager.encode_secret(f"{s_id}:{s_sekret}")
+        return CryptoManager.encode_secret(f"{s_id}:{s_sekret}")
+
+    @staticmethod
+    def basic_auth_token(s_id: str, s_sekret: str):
+        """Generation d'un autorization basic de type ID:SECRET"""
+        access_token = CryptoManager.basic_auth_encode(s_id, s_sekret)
         return f"Basic {access_token}"
 
     @staticmethod

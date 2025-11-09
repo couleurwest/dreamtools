@@ -42,7 +42,7 @@ RGX_PWD_PATTERN = re.compile(RGX_PWD)
 RGX_URL_PATTERN = re.compile(RGX_URL)
 
 import pyperclipfix
-
+import json
 
 def clipboard_copy():
     pyperclipfix.copy('The text to be copied to the clipboard.')
@@ -115,21 +115,21 @@ def clean_coma(ch, w_punk=False):
     :param w_punk: indique si la punctuation est à nettoyer ou pas (suppression)
 
     :Exemple:
-        >>> s = 'Se  réveiller au matin    de sa destiné !!'
+        >>> s = "Se  réveiller au matin    de sa destiné, l'ideal soi-meme !!"
         >>> clean_coma (s)
-        'Se seveiller au matin (ou pas) de sa destine !!''
+        'Se seveiller au matin (ou pas) de sa destine, l'ideal soi-meme !!''
         >>> clean_coma (s, True)
-        'Se reveiller au matin ou pas de sa destine'
+        'Se reveiller au matin ou pas de sa destine l ideal soi meme'
 
     """
-
     if w_punk:
         # Nettoyage caractere spéciaux (espace...)
+        ch = re.sub("""[-_']""", ' ', ch)
         o_rules = str.maketrans(RGX_ACCENTS, 'aaaaeeeeiiioooouuuync', punctuation)
     else:
         o_rules = str.maketrans(RGX_ACCENTS, 'aaaaeeeeiiioooouuuync')
 
-    return clean_space(ch).translate(o_rules).swapcase().translate(o_rules).swapcase()
+    return clean_space(ch.translate(o_rules).swapcase().translate(o_rules).swapcase())
 
 
 def clean_master(ch):
@@ -420,7 +420,7 @@ def is_valid_phone(v: str) -> bool:
     return bool(RGX_PHONE_PATTERN.fullmatch(v))
 
 
-def is_valid_url(link: str) -> bool:
+def is_valid_url(link: str) :
     # Force ajout du schéma si manquant
     try:
         if not link.startswith(('http://', 'https://')):
@@ -531,3 +531,13 @@ def ensure_string(element: str | bytes | bytearray) -> str:
         return element.decode("utf-8")
     except UnicodeDecodeError:
         return base64.b64encode(element).decode()
+
+def ensure_dict (value) -> dict:
+    if value:
+        return value if isinstance(value, dict) else json.loads(value) if isinstance(value, str) else value
+    return {}
+
+def ensure_list (value) -> dict:
+    if value:
+        return value if isinstance(value, list) else json.loads(value) if isinstance(value, str) else value
+    return {}
