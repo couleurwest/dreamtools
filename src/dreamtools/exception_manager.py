@@ -65,53 +65,41 @@ class AuthException(ExceptionManager):
 
 
 class OAuthException(ExceptionManager):
-    def __init__(self):
-        super().__init__(
-            "Vous n’avez pas les autorisations nécessaires pour accéder à cette ressource.",
-            "Accès interdit",
-            403
-        )
+    def __init__(self,
+                 message="Vous n’avez pas les autorisations nécessaires pour accéder à cette ressource.",
+                 title="Accès interdit"):
+        super().__init__(message,title, 403)
 
 
 class OAuthElapsedException(ExceptionManager):
-    def __init__(self):
-        super().__init__(
-            "Le délai d’authentification a expiré. Veuillez recommencer.",
-            "Délai dépassé",
-            408
-        )
+    def __init__(self,
+                 message="Le délai d’authentification a expiré. Veuillez recommencer",
+                 title="Délai dépassé"):
+        super().__init__(message, title, 408)
 
 
 class UExistException(ExceptionManager):
-    def __init__(self):
-        super().__init__(
-            "Ce compte existe déjà. Veuillez utiliser une autre adresse ou réinitialiser votre mot de passe.",
-            "Conflit d'identité",
-            409
-        )
+    def __init__(self, message="Ce compte existe déjà. Veuillez utiliser une autre adresse ou réinitialiser votre mot de passe.",
+                 title="Conflit d'identité"):
+        super().__init__(message, title, 409)
 
 
 class AccountException(ExceptionManager):
-    def __init__(self):
-        super().__init__(
-            "Aucun compte correspondant n’a été trouvé.",
-            "Compte introuvable",
-            404
-        )
-
+    def __init__(self,
+                 message="Aucun compte correspondant n’a été trouvé.",
+                 title="Compte introuvable"):
+        super().__init__(message, title, 404)
 
 class RessourceException(ExceptionManager):
-    def __init__(self):
-        super().__init__(
-            "La ressource demandée est introuvable ou n’existe plus.",
-            "Ressource introuvable",
-            404
-        )
-
+    def __init__(self,
+                 message="La ressource demandée est introuvable ou n’existe plus.",
+                 title="Ressource introuvable"):
+        super().__init__(message, title, 404)
 
 class PageException(ExceptionManager):
-    def __init__(self, message="La page que vous cherchez n’existe pas."):
-        super().__init__(message,"Page non trouvée",404 )
+    def __init__(self, message="La page que vous cherchez n’existe pas.",
+                 title="Ressource introuvable"):
+        super().__init__(message,title,404 )
 
 
 class ParamsException(ExceptionManager):
