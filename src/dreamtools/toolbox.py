@@ -52,9 +52,6 @@ def clipboard_paste():
     pyperclipfix.paste()
 
 
-'The text to be copied to the clipboard.'
-
-
 def print_err(*args, **kwargs):
     """Ecriture sur le flux erreur de la console
 
