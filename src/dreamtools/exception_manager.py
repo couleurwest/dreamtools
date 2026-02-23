@@ -103,10 +103,12 @@ class PageException(ExceptionManager):
 
 
 class ParamsException(ExceptionManager):
-    def __init__(self, message="Les données soumises sont invalides ou incomplètes."):
-        super().__init__(message ,"Paramètres incorrects",400)
+    def __init__(self, message="Les données soumises sont invalides ou incomplètes.",
+                 title="Paramètres incorrects"):
+        super().__init__(message ,title,400)
 
 
 class TooManyRequests(ExceptionManager):
-    def __init__(self, message="Trop de requêtes ont été envoyées en peu de temps. Merci de patienter avant de réessayer."):
-        super().__init__(message, "Requêtes trop fréquentes",429)
+    def __init__(self, message="Trop de requêtes ont été envoyées en peu de temps. Merci de patienter avant de réessayer.",
+                 title="Requêtes trop fréquentes"):
+        super().__init__(message, title,429)
