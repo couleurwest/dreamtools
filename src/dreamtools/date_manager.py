@@ -524,7 +524,7 @@ def dte_add_workday(dtime, nb):
     return dtime
 
 
-def dtime_diff(dtea: datetime, dteb: datetime):
+def dtime_diff(dtea: datetime|date, dteb: datetime|date):
     """
     Calcule la différence en jours entre deux dates. : dteb - dtea
      si resultat < 0 alors dteb(dans le passe) < dtea

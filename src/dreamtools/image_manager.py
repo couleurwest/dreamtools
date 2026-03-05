@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # project/dreamtools-dreamgeeker/image_manager.py
-_all_ = ['ImageManager', 'TYPE_IMG_JPEG', 'TYPE_IMG_PNG', 'TYPE_IMG_GIF', 'TYPE_IMG_WEBP', 'TYPE_IMG_SVG']
+_all_ = ['ImageManager', 'TYPE_IMG_JPEG', 'TYPE_IMG_PNG', 'TYPE_IMG_GIF', 'TYPE_IMG_WEBP', TYPE_MIME,'TYPE_IMG_SVG']
 
 import copy
 import os
@@ -19,7 +19,12 @@ TYPE_IMG_PNG = 'PNG'
 TYPE_IMG_GIF = 'GIF'
 TYPE_IMG_WEBP = 'WEBP'
 TYPE_IMG_SVG = "SVG"
-
+TYPE_MIME = {
+    TYPE_IMG_JPEG: "image/jpeg",
+    TYPE_IMG_PNG: "image/png",
+    TYPE_IMG_WEBP: "image/webp",
+    TYPE_IMG_GIF: "image/gif"
+}
 """
 Class CImagine
 =============================
@@ -49,7 +54,18 @@ class ImageManager(object):
         :param int size_thumb_max: taille miniature et minimum
 
         """
-        self.extension = file_manager.file_extension(src).upper()
+        # Chargement image
+        if isinstance(src, (bytes, bytearray)):
+            self.img = Image.open(BytesIO(src))
+            self.extension = self.img.format.upper()
+
+        elif isinstance(src, Path):
+            self.extension = src.suffix.replace('.', '').upper()
+            self.img = Image.open(src)
+
+        else:
+            self.extension = file_manager.file_extension(src).upper()
+            self.img = Image.open(src)
 
         if self.extension == "JPG":
             self.extension = TYPE_IMG_JPEG
@@ -144,27 +160,41 @@ class ImageManager(object):
 
         return bg
 
-    def resize(self):
-        """ Redimensionnement de l'image au format jpg
-
-
-        :return:
+    def resize(self, width: int = None, height: int = None):
         """
-        if self.h < self.size_thumb_max or self.w < self.size_thumb_max:
-            raise Exception("Image trop petite")
-        elif self.h < self.size_max and self.w < self.size_max:
+        Redimensionne l'image en conservant le ratio.
+
+        - Si width et height fournis → cover automatique
+        - Si width ou height seul → resize proportionnel
+        - Si aucun → resize selon size_max (comportement actuel)
+        """
+
+        # Cas cover : les deux dimensions fournies
+        if width and height:
+            self.cover(width, height)
             return
 
-        if self.w >= self.h:
-            coeff = self.w / self.size_max
+        # Calcul proportionnel selon width ou height
+        if width:
+            ratio = width / self.w
+            height = int(self.h * ratio)
+
+        elif height:
+            ratio = height / self.h
+            width = int(self.w * ratio)
         else:
-            coeff = self.h / self.size_max
+            # Comportement actuel : limiter taille max
+            if self.w >= self.h:
+                coeff = self.w / self.size_max
+            else:
+                coeff = self.h / self.size_max
 
-        h = int(self.h / coeff)
-        w = int(self.w / coeff)
+            width = int(self.w / coeff)
+            height = int(self.h / coeff)
 
-
-        self.img = self.img.resize((w, h))
+        # Redimensionnement haute qualité
+        self.img = self.img.resize((width, height), Image.Resampling.LANCZOS )
+        self._size = self.img.size
 
     def recadre(self, w, h):
         """"""
@@ -177,15 +207,36 @@ class ImageManager(object):
 
         return w, h
 
-    def rationalize(self, r_w: int, r_h: int):
-        """ Redimensionnement de l'image au format jpg
-
-        :return:
+    def cover(self, width: int, height: int):
         """
+        Redimensionne l'image pour couvrir entièrement la zone demandée
+        puis recadre au centre. Qualité maximale.
+        """
+
+        ratio = max(width / self.w, height / self.h)
+
+        new_w = int(self.w * ratio)
+        new_h = int(self.h * ratio)
+
+        # resize haute qualité
+        img = self.img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
+        # crop centré
+        left = (new_w - width) // 2
+        top = (new_h - height) // 2
+
+        self.img = img.crop((left, top, left + width, top + height))
+
+        self._size = self.img.size
+
+    def rationalize(self, r_w: int, r_h: int):
+        """ Redimensionnement de l'image au format jpg"""
         w = self.w
         h = w * r_h // r_w
 
-        self.img = self.img.resize((w, h))
+        self.img = self.img.resize((w, h), Image.Resampling.LANCZOS)
+
+        self._size = self.img.size
 
     def save(self, frm: str | None = None):
         """ Thumb Image
@@ -209,6 +260,13 @@ class ImageManager(object):
             self.img.save(file_name, exif=self.exif, quality=90, optimize=True)
         else:
             self.img.save(file_name, format=frm, quality=90, optimize=True)
+
+    def generate_bytes(self, q=90):
+        buffer = BytesIO()
+        self.img.save(buffer, format=self.extension, quality=q, optimize=True, subsampling=0)
+        data = buffer.getvalue()
+        mime = TYPE_MIME.get(self.extension, TYPE_IMG_JPEG)
+        return mime, data
 
     def generate_thumb(self):
         """ Thumb Image       """
