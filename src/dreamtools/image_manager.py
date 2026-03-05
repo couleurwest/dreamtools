@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # project/dreamtools-dreamgeeker/image_manager.py
-_all_ = ['ImageManager', 'TYPE_IMG_JPEG', 'TYPE_IMG_PNG', 'TYPE_IMG_GIF', 'TYPE_IMG_WEBP', TYPE_MIME,'TYPE_IMG_SVG']
+_all_ = ['ImageManager', 'TYPE_IMG_JPEG', 'TYPE_IMG_PNG', 'TYPE_IMG_GIF', 'TYPE_IMG_WEBP', 'TYPE_MIME','TYPE_IMG_SVG']
 
 import copy
 import os
