@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 # project/dreamtools-dreamgeeker/image_manager.py
-_all_ = ['ImageManager', 'TYPE_IMG_JPEG', 'TYPE_IMG_PNG', 'TYPE_IMG_GIF', 'TYPE_IMG_WEBP', 'TYPE_MIME','TYPE_IMG_SVG']
+_all_ = ['ImageManager', 'TYPE_IMG_JPEG', 'TYPE_IMG_PNG', 'TYPE_IMG_GIF', 'TYPE_IMG_WEBP', 'TYPE_MIME', 'TYPE_IMG_SVG']
 
 import copy
 import os
 from io import BytesIO
+from pathlib import Path
 
-from PIL import Image, ImageFile, ImageDraw
+from PIL import Image, ImageDraw
 from PIL.ExifTags import TAGS
 from PIL.TiffImagePlugin import ImageFileDirectory_v2
 
@@ -19,12 +20,8 @@ TYPE_IMG_PNG = 'PNG'
 TYPE_IMG_GIF = 'GIF'
 TYPE_IMG_WEBP = 'WEBP'
 TYPE_IMG_SVG = "SVG"
-TYPE_MIME = {
-    TYPE_IMG_JPEG: "image/jpeg",
-    TYPE_IMG_PNG: "image/png",
-    TYPE_IMG_WEBP: "image/webp",
-    TYPE_IMG_GIF: "image/gif"
-}
+TYPE_MIME = {TYPE_IMG_JPEG: "image/jpeg", TYPE_IMG_PNG: "image/png", TYPE_IMG_WEBP: "image/webp",
+    TYPE_IMG_GIF: "image/gif"}
 """
 Class CImagine
 =============================
@@ -193,7 +190,7 @@ class ImageManager(object):
             height = int(self.h / coeff)
 
         # Redimensionnement haute qualité
-        self.img = self.img.resize((width, height), Image.Resampling.LANCZOS )
+        self.img = self.img.resize((width, height), Image.Resampling.LANCZOS)
         self._size = self.img.size
 
     def recadre(self, w, h):
