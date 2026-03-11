@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 # project/dreamtools-dreamgeeker/image_manager.py
-_all_ = ['ImageManager', 'TYPE_IMG_JPEG', 'TYPE_IMG_PNG', 'TYPE_IMG_GIF', 'TYPE_IMG_WEBP', 'TYPE_MIME', 'TYPE_IMG_SVG']
+_all_ = ['ImageManager', 'TYPE_IMG_JPEG', 'TYPE_IMG_PNG', 'TYPE_IMG_GIF', 'TYPE_IMG_WEBP', 'TYPE_MIME','TYPE_IMG_SVG']
 
 import copy
 import os
 from io import BytesIO
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageFile, ImageDraw
 from PIL.ExifTags import TAGS
 from PIL.TiffImagePlugin import ImageFileDirectory_v2
 
@@ -20,8 +20,12 @@ TYPE_IMG_PNG = 'PNG'
 TYPE_IMG_GIF = 'GIF'
 TYPE_IMG_WEBP = 'WEBP'
 TYPE_IMG_SVG = "SVG"
-TYPE_MIME = {TYPE_IMG_JPEG: "image/jpeg", TYPE_IMG_PNG: "image/png", TYPE_IMG_WEBP: "image/webp",
-    TYPE_IMG_GIF: "image/gif"}
+TYPE_MIME = {
+    TYPE_IMG_JPEG: "image/jpeg",
+    TYPE_IMG_PNG: "image/png",
+    TYPE_IMG_WEBP: "image/webp",
+    TYPE_IMG_GIF: "image/gif"
+}
 """
 Class CImagine
 =============================
@@ -73,7 +77,6 @@ class ImageManager(object):
         self.size_max = size_max
         self.size_thumb_max = size_thumb_max
 
-        self.img = Image.open(src)
         self.exif = None
 
         self._size = self.img.size
@@ -163,7 +166,7 @@ class ImageManager(object):
 
         - Si width et height fournis → cover automatique
         - Si width ou height seul → resize proportionnel
-        - Si aucun → resize selon size_max (comportement actuel)
+        - Si aucun → resize selon size_max
         """
 
         # Cas cover : les deux dimensions fournies
@@ -173,25 +176,50 @@ class ImageManager(object):
 
         # Calcul proportionnel selon width ou height
         if width:
-            ratio = width / self.w
-            height = int(self.h * ratio)
+            # Si l'image est déjà plus petite ou égale → rien à faire
+            if self.w <= width:
+                width = self.w
+                height = self.h
+            else:
+                ratio = width / self.w
+                height = int(self.h * ratio)
 
         elif height:
-            ratio = height / self.h
-            width = int(self.w * ratio)
-        else:
-            # Comportement actuel : limiter taille max
-            if self.w >= self.h:
-                coeff = self.w / self.size_max
+            if self.h <= height:
+                width = self.w
+                height = self.h
             else:
-                coeff = self.h / self.size_max
+                ratio = height / self.h
+                width = int(self.w * ratio)
 
-            width = int(self.w / coeff)
-            height = int(self.h / coeff)
+        else:
+            # Limiter selon size_max
+            if max(self.w, self.h) <= self.size_max:
+                width, height = self.w, self.h
+            else:
+                coeff = max(self.w, self.h) / self.size_max
+                width = int(self.w / coeff)
+                height = int(self.h / coeff)
 
-        # Redimensionnement haute qualité
-        self.img = self.img.resize((width, height), Image.Resampling.LANCZOS)
+        # Si aucune modification → ne rien faire
+        if (width, height) == self.img.size:
+            return
+
+        # Convertir en RGB ou RGBA si nécessaire
+        if self.img.mode not in ("RGB", "RGBA"):
+            self.img = self.img.convert("RGB")
+
+        # Redimensionnement progressif
+        self.img = self.resize_progressive(self.img, width, height)
+
         self._size = self.img.size
+    def resize_progressive(self,img, target_width, target_height):
+        w, h = img.size
+        while w/2 > target_width and h/2 > target_height:
+            w, h = w//2, h//2
+            img = img.resize((w, h), Image.Resampling.LANCZOS)
+        img = img.resize((target_width, target_height), Image.Resampling.LANCZOS)
+        return img
 
     def recadre(self, w, h):
         """"""
