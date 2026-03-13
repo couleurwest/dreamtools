@@ -206,13 +206,18 @@ class ImageManager(object):
             return
 
         # Convertir en RGB ou RGBA si nécessaire
-        if self.img.mode not in ("RGB", "RGBA"):
-            self.img = self.img.convert("RGB")
+        if  self.extension == TYPE_IMG_JPEG and self.img.mode in ('RGBA', 'LA'):
+            # JPEG ne supporte pas alpha → convertir en RGB
+            background = Image.new("RGB", self.img.size, (255, 255, 255))
+            background.paste(self.img, mask=self.img.split()[-1])  # utiliser l'alpha comme masque
+            self.img = background
+        elif self.extension != TYPE_IMG_JPEG and self.img.mode == 'RGB':
+            self.img = self.img.convert("RGBA")
 
         # Redimensionnement progressif
         self.img = self.resize_progressive(self.img, width, height)
-
         self._size = self.img.size
+
     def resize_progressive(self,img, target_width, target_height):
         w, h = img.size
         while w/2 > target_width and h/2 > target_height:
@@ -278,6 +283,8 @@ class ImageManager(object):
             background = Image.new("RGB", self.img.size, (255, 255, 255))
             background.paste(self.img, mask=self.img.split()[-1])  # utiliser l'alpha comme masque
             self.img = background
+        elif frm != 'JPEG' and self.img.mode == 'RGB':
+            self.img = self.img.convert("RGBA")
 
         file_manager.makedirs(file_manager.parent_directory(file_name))
 
