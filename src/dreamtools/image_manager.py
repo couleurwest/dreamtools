@@ -14,6 +14,8 @@ from PIL.TiffImagePlugin import ImageFileDirectory_v2
 from . import file_manager
 from .controller_manager import ControllerEngine
 from .tracking_manager import TrackingManager
+import cv2
+import numpy as np
 
 TYPE_IMG_JPEG = 'JPEG'
 TYPE_IMG_PNG = 'PNG'
@@ -80,9 +82,12 @@ class ImageManager(object):
         self.exif = None
 
         self._size = self.img.size
-        self._format = self.img.format.lower()
+        self._format = (self.img.format or self.extension).lower()
 
         self.file = file_manager.file_extension_less(dest)  # on s'assure de retirer l'extension
+
+        if self.img.mode not in ("RGB", "RGBA"):
+            self.img = self.img.convert("RGBA")
 
         self.resize()
 
@@ -92,7 +97,7 @@ class ImageManager(object):
     def __exit__(self, exc_type, exc_value, traceback):
         try:
             self.img.close()
-        except:
+        except Exception:
             pass
 
     @property
@@ -119,6 +124,10 @@ class ImageManager(object):
             bg = Image.new("RGB", self._size, (255, 255, 255))
             bg.paste(self.img, (0, 0), self.img)
             return bg
+
+        if self.img.mode != "RGB":
+            return self.img.convert("RGB")
+
         return self.img
 
     def redraw_border(self, shape="rect", wc=False):
@@ -141,7 +150,7 @@ class ImageManager(object):
             bg = Image.new("RGB", box, (255, 255, 255))
             bg.paste(self.white_background(), (padding, padding))
         else:  # shape == "circ":
-            self.img.convert("RGBA")
+            self.img = self.img.convert("RGBA")
             bg = Image.new("RGBA", box, (0, 0, 0, 0))
             if wc:
                 draw = ImageDraw.Draw(bg)
@@ -206,18 +215,13 @@ class ImageManager(object):
             return
 
         # Convertir en RGB ou RGBA si nécessaire
-        if  self.extension == TYPE_IMG_JPEG and self.img.mode in ('RGBA', 'LA'):
-            # JPEG ne supporte pas alpha → convertir en RGB
-            background = Image.new("RGB", self.img.size, (255, 255, 255))
-            background.paste(self.img, mask=self.img.split()[-1])  # utiliser l'alpha comme masque
-            self.img = background
-        elif self.extension != TYPE_IMG_JPEG and self.img.mode == 'RGB':
-            self.img = self.img.convert("RGBA")
+        if self.img.mode not in ("RGB", "RGBA"):
+            self.img = self.img.convert("RGB")
 
         # Redimensionnement progressif
         self.img = self.resize_progressive(self.img, width, height)
-        self._size = self.img.size
 
+        self._size = self.img.size
     def resize_progressive(self,img, target_width, target_height):
         w, h = img.size
         while w/2 > target_width and h/2 > target_height:
@@ -228,7 +232,7 @@ class ImageManager(object):
 
     def recadre(self, w, h):
         """"""
-        for coeff in range(11):
+        for coeff in range(2, 11):
             if w % coeff == 0 and h % coeff == 0:
                 w //= coeff
                 h //= coeff
@@ -237,7 +241,38 @@ class ImageManager(object):
 
         return w, h
 
-    def cover(self, width: int, height: int):
+    def detect_face_focus(self):
+        # conversion PIL → OpenCV
+        img_cv = cv2.cvtColor(np.array(self.img), cv2.COLOR_RGB2BGR)
+
+        gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
+
+        face_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        )
+
+        faces = face_cascade.detectMultiScale(
+            gray,
+            scaleFactor=1.2,
+            minNeighbors=5,
+            minSize=(30, 30)
+        )
+
+        if len(faces) == 0:
+            return 0.5, 0.4  # fallback (légèrement haut)
+
+        # prendre le plus grand visage
+        x, y, w, h = max(faces, key=lambda f: f[2] * f[3])
+
+        center_x = x + w / 2
+        center_y = y + h / 2
+
+        # normalisation (0 → 1)
+        focus_x = center_x / self.w
+        focus_y = center_y / self.h
+
+        return focus_x, focus_y
+    def cover(self, width: int, height: int, focus_x=0.5, focus_y=0.5):
         """
         Redimensionne l'image pour couvrir entièrement la zone demandée
         puis recadre au centre. Qualité maximale.
@@ -248,12 +283,22 @@ class ImageManager(object):
         new_w = int(self.w * ratio)
         new_h = int(self.h * ratio)
 
+        focus_y = 0.35 if self.h > self.w else 0.5
+
         # resize haute qualité
         img = self.img.resize((new_w, new_h), Image.Resampling.LANCZOS)
 
         # crop centré
         left = (new_w - width) // 2
         top = (new_h - height) // 2
+
+        # position du focus dans l'image redimensionnée
+        focus_px = int(new_w * focus_x)
+        focus_py = int(new_h * focus_y)
+
+        # calcul du crop autour du focus
+        left = max(0, min(focus_px - width // 2, new_w - width))
+        top = max(0, min(focus_py - height // 2, new_h - height))
 
         self.img = img.crop((left, top, left + width, top + height))
 
@@ -283,34 +328,30 @@ class ImageManager(object):
             background = Image.new("RGB", self.img.size, (255, 255, 255))
             background.paste(self.img, mask=self.img.split()[-1])  # utiliser l'alpha comme masque
             self.img = background
-        elif frm != 'JPEG' and self.img.mode == 'RGB':
-            self.img = self.img.convert("RGBA")
 
         file_manager.makedirs(file_manager.parent_directory(file_name))
 
         if frm == TYPE_IMG_PNG and self.exif:
-            self.img.save(file_name, exif=self.exif, quality=90, optimize=True)
+            self.img.save(file_name, exif=self.exif,  compress_level=6, optimize=True)
         else:
             self.img.save(file_name, format=frm, quality=90, optimize=True)
-
     def generate_bytes(self, q=90):
         buffer = BytesIO()
-        self.img.save(buffer, format=self.extension, quality=q, optimize=True, subsampling=0)
+        fmt = "JPEG" if self.extension in ("JPG", "JPEG") else self.extension
+        self.img.save(buffer, format=fmt, quality=q, optimize=True, subsampling=0)
+
         data = buffer.getvalue()
         mime = TYPE_MIME.get(self.extension, TYPE_IMG_JPEG)
         return mime, data
 
     def generate_thumb(self):
         """ Thumb Image       """
-        thumb = copy.deepcopy(self)
-        thumb.img.thumbnail((self.size_thumb_max, self.size_thumb_max))
-        thumb.file += "_thumb"
-        return thumb
+        return ImageManager(self.img.filename, self.file + "_thumb", self.size_thumb_max, self.size_thumb_max)
 
     def save_thumb_image(self, frm: str = TYPE_IMG_JPEG):
         """ Thumb Image
         """
-        thumb = self.generate_thumb()
+        thumb =  self.generate_thumb()
         thumb.save(frm=frm)
 
     def to_badge(self):
@@ -344,7 +385,7 @@ class ImageManager(object):
         ifd.save(out)
 
         self.exif = b"Exif\x00\x00" + out.getvalue()
-        self.img.save(self.file, TYPE_IMG_JPEG, exif=self.exif)
+        self.save(frm=TYPE_IMG_JPEG)
 
     @staticmethod
     def directory_parsing(main_directory: str):
