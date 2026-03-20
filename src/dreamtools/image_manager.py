@@ -346,7 +346,16 @@ class ImageManager(object):
 
     def generate_thumb(self):
         """ Thumb Image       """
-        return ImageManager(self.img.filename, self.file + "_thumb", self.size_thumb_max, self.size_thumb_max)
+        path_file = ''
+        if not path_file:
+            for ext in ('.jpg', '.jpeg', '.png', '.svg', '.webp', ''):
+                if Path(self.file + ext).exists():
+                    return ImageManager(self.file + ext, self.file + "_thumb", self.size_thumb_max, self.size_thumb_max)
+                    break
+        path_file = getattr(self.img, 'filename', 'None')
+        if path_file and Path(path_file).exists():
+            return ImageManager(path_file, self.file + "_thumb", self.size_thumb_max, self.size_thumb_max)
+
 
     def save_thumb_image(self, frm: str = TYPE_IMG_JPEG):
         """ Thumb Image

@@ -22,7 +22,7 @@ import random
 import re
 import sys
 from random import choice, randint
-from string import punctuation, ascii_letters, digits
+from string import ascii_letters, digits
 from urllib.parse import urlparse
 
 import dns.resolver
@@ -121,11 +121,9 @@ def clean_coma(ch, w_punk=False):
     """
     if w_punk:
         # Nettoyage caractere spéciaux (espace...)
-        ch = re.sub("""[-_']""", ' ', ch)
-        o_rules = str.maketrans(RGX_ACCENTS, 'aaaaeeeeiiioooouuuync', punctuation)
-    else:
-        o_rules = str.maketrans(RGX_ACCENTS, 'aaaaeeeeiiioooouuuync')
+        ch = re.sub(r"[^\w\s]", " ", ch)
 
+    o_rules = str.maketrans(RGX_ACCENTS, 'aaaaeeeeiiioooouuuync')
     return clean_space(ch.translate(o_rules).swapcase().translate(o_rules).swapcase())
 
 
