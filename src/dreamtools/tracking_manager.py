@@ -47,8 +47,6 @@ class TrackingManager:
             log_config.dictConfig(cfg)
             TrackingManager.tracker = logging.getLogger(logger)
             TrackingManager.system_tracker = logging.getLogger("system")
-
-
         except Exception as e:
             toolbox.print_err(e, ': ', 'Error in Logging Configuration. Using default configs')
             logging.basicConfig(level=logging.NOTSET)
@@ -62,9 +60,11 @@ class TrackingManager:
         :param int log_level: LOG LEVEL Niveau de l'alert (DEBUG | INFO | WARN | )
 
         """
-
-        TrackingManager.tracker.log(log_level, msg, exc_info=True, stack_info=False, stacklevel=2,
-                                    extra={'title': title, 'stacklevel': 2})
+        try:
+            exc = sys.exc_info()[0] is not None
+        except Exception:
+            exc = False
+        TrackingManager.tracker.log(log_level, msg, exc_info=exc, stack_info=False, stacklevel=2, extra={'title': title})
 
     @staticmethod
     def warning_tracking(msg, title):
@@ -124,9 +124,7 @@ class TrackingManager:
             if TrackingManager.LOG_TRACKED != '':
                 if TrackingManager.system_tracker:
                     TrackingManager.system_tracking('## ' + TrackingManager.LOG_TRACKED + ' ##', title, logging.INFO)
-                    TrackingManager.msg_tracking('## ' + TrackingManager.LOG_TRACKED + ' ##', title, logging.INFO)
                 TrackingManager.LOG_TRACKED = ''
-
             if isinstance(ex, ExceptionManager):
                 TrackingManager.error_tracking(ex.message, ex.title)
                 return ex
