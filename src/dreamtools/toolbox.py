@@ -535,4 +535,4 @@ def ensure_dict (value) -> dict:
 def ensure_list (value) -> dict:
     if value:
         return value if isinstance(value, list) else json.loads(value) if isinstance(value, str) else value
-    return {}
+    return []
