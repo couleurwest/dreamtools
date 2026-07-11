@@ -88,7 +88,7 @@ def clean_space(ch):
 
 
 def clean_allspace(ch, very_all=True):
-    """Nettoyage de tous les espace et carateres vides
+    """Nettoyage de tous les espaces et carateres vides
 
     :param str ch: Chaine à nettoyer
     :param bool very_all: caractère vide aussi, True (False = Espaces uniquement)
@@ -532,7 +532,7 @@ def ensure_dict (value) -> dict:
         return value if isinstance(value, dict) else json.loads(value) if isinstance(value, str) else value
     return {}
 
-def ensure_list (value) -> dict:
+def ensure_list (value) -> list:
     if value:
         return value if isinstance(value, list) else json.loads(value) if isinstance(value, str) else value
     return []
